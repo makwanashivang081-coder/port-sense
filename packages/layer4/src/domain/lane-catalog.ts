@@ -61,8 +61,8 @@ export const LANE_CATALOG: readonly LaneDefinition[] = [
     transitDays: null,
     transitSource: null,
   },
-  // —— Export → Jebel Ali ——
-  ...gatedExport("AEJEA", "Jebel Ali", [
+  // —— Export → Dubai (Jebel Ali) ——
+  ...gatedExport("AEJEA", "Dubai", [
     "INNSA",
     "INMUN",
     "INMAA",
@@ -71,7 +71,7 @@ export const LANE_CATALOG: readonly LaneDefinition[] = [
     "INCCU",
   ]),
   // —— Export → USA stub ——
-  ...gatedExport("USGEN", "USA (generic stub)", [
+  ...gatedExport("USGEN", "USA", [
     "INNSA",
     "INMUN",
     "INMAA",

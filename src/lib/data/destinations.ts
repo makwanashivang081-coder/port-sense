@@ -11,56 +11,56 @@ export interface DestinationOption {
   readonly hint: string;
 }
 
-/** Destinations that exist in Layer-4 catalog (UI labels only). */
+/** Destinations that exist in Layer-4 catalog (UI labels only — plain names). */
 export const DESTINATIONS: readonly DestinationOption[] = [
   {
     id: "chennai",
     mode: "domestic",
     apiValue: "chennai",
-    label: "Chennai (INMAA)",
+    label: "Chennai",
     hint: "Compare Indian origins into Chennai",
   },
   {
     id: "cochin",
     mode: "domestic",
     apiValue: "cochin",
-    label: "Cochin (INCOK)",
+    label: "Cochin",
     hint: "Compare origins into Cochin",
   },
   {
     id: "jnpt",
     mode: "domestic",
     apiValue: "jnpt",
-    label: "JNPT (INNSA)",
+    label: "JNPT",
     hint: "e.g. Mundra → JNPT coastal",
   },
   {
     id: "vizag",
     mode: "domestic",
     apiValue: "vizag",
-    label: "Vizag (INVTZ)",
+    label: "Vizag",
     hint: "Compare origins into Vizag",
   },
   {
     id: "kolkata",
     mode: "domestic",
     apiValue: "kolkata",
-    label: "Kolkata (INCCU)",
+    label: "Kolkata",
     hint: "Compare origins into Kolkata",
   },
   {
     id: "AEJEA",
     mode: "export",
     apiValue: "AEJEA",
-    label: "Jebel Ali (UAE)",
-    hint: "Indian gates → Jebel Ali",
+    label: "Dubai (Jebel Ali)",
+    hint: "Indian ports → Dubai",
   },
   {
     id: "USGEN",
     mode: "export",
     apiValue: "USGEN",
-    label: "USA (stub)",
-    hint: "Same Indian-origin demurrage as UAE — ocean days unknown (not invented)",
+    label: "USA",
+    hint: "Same Indian-origin demurrage as Dubai — ocean days unknown (not invented)",
   },
 ] as const;
 
@@ -89,13 +89,13 @@ export const OVERSEAS_MAP_DESTINATIONS: Readonly<
 > = {
   AEJEA: {
     id: "AEJEA",
-    label: "Jebel Ali (Dubai, UAE)",
+    label: "Dubai (Jebel Ali)",
     lat: 25.0118,
     lng: 55.0618,
   },
   USGEN: {
     id: "USGEN",
-    label: "USA (Long Beach stub)",
+    label: "USA",
     lat: 33.7361,
     lng: -118.2636,
   },
@@ -110,9 +110,23 @@ export function resolveMapDestination(
   }
   const port = domesticPorts.find((p) => p.id === destinationId);
   if (!port) return null;
+  const short =
+    port.id === "jnpt"
+      ? "JNPT"
+      : port.id === "mundra"
+        ? "Mundra"
+        : port.id === "chennai"
+          ? "Chennai"
+          : port.id === "cochin"
+            ? "Cochin"
+            : port.id === "vizag"
+              ? "Vizag"
+              : port.id === "kolkata"
+                ? "Kolkata"
+                : port.name;
   return {
     id: port.id,
-    label: `${port.name} (${port.code})`,
+    label: short,
     lat: port.lat,
     lng: port.lng,
   };

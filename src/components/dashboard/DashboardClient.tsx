@@ -2,40 +2,40 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, RotateCcw, Route, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, MapPin, RotateCcw, Route } from "lucide-react";
 import { PORTS } from "@/lib/data/ports";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
 import { DATA_PROVENANCE } from "@/lib/data/provenance";
 import {
   defaultDestination,
-  destinationSelectOptions,
   destinationsForMode,
   resolveMapDestination,
   type LaneMode,
 } from "@/lib/data/destinations";
 import type { RiskMath } from "@/lib/demurrageCalc";
-import { formatINR } from "@/lib/utils";
+import { cn, formatINR } from "@/lib/utils";
 import type { CarrierId, ContainerType, RiskInput, RiskResult } from "@/types";
 import { KpiCards } from "@/components/dashboard/KpiCards";
 import { CongestionChart } from "@/components/dashboard/CongestionChart";
 import { LaneCompareTable, type LaneRowView } from "@/components/dashboard/LaneCompareTable";
+import { LaneResultCards } from "@/components/dashboard/LaneResultCards";
+import { WizardProgress } from "@/components/dashboard/WizardProgress";
 import { RateBreakdown } from "@/components/dashboard/RateBreakdown";
 import { EquipmentStrip } from "@/components/dashboard/EquipmentStrip";
-import { GovtInsights } from "@/components/dashboard/GovtInsights";
 import { FormulaCard } from "@/components/dashboard/FormulaCard";
-import { SummaryChip } from "@/components/dashboard/Chips";
 import { Button } from "@/components/ui/Button";
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { Field, Select, TextInput, type SelectOption } from "@/components/ui/Field";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { RiskBadge } from "@/components/ui/RiskBadge";
 
 const PortMap = dynamic(
   () => import("@/components/dashboard/PortMap").then((m) => m.PortMap),
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[26rem] items-center justify-center rounded-card border border-hairline bg-surface-2 sm:h-[34rem]">
+      <div className="flex h-64 items-center justify-center rounded-card border border-hairline bg-surface-2 sm:h-[34rem]">
         <span className="flex items-center gap-2 text-label font-semibold uppercase text-ink-4">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-orange" aria-hidden="true" />
           Loading map…
@@ -46,7 +46,7 @@ const PortMap = dynamic(
 );
 
 const CARRIER_OPTIONS: readonly SelectOption<CarrierId>[] = [
-  { value: "undecided", label: "Not decided (use Maersk tariff)" },
+  { value: "undecided", label: "Not decided (Maersk tariff)" },
   { value: "maersk", label: "Maersk" },
   { value: "msc", label: "MSC" },
   { value: "cmacgm", label: "CMA CGM" },
@@ -54,30 +54,24 @@ const CARRIER_OPTIONS: readonly SelectOption<CarrierId>[] = [
 ];
 
 const CONTAINER_OPTIONS: readonly SelectOption<ContainerType>[] = [
-  { value: "20ft", label: "20 ft standard" },
-  { value: "40ft", label: "40 ft standard" },
-  { value: "40hc", label: "40 ft high cube" },
+  { value: "20ft", label: "20 ft" },
+  { value: "40ft", label: "40 ft" },
+  { value: "40hc", label: "40 ft HC" },
 ];
 
-const CONTAINER_SHORT: Record<ContainerType, string> = {
-  "20ft": "20 ft",
-  "40ft": "40 ft",
-  "40hc": "40 ft HC",
-};
-
 const MODE_TABS = [
-  { id: "export", label: "Export (IN → overseas)" },
-  { id: "domestic", label: "Domestic (IN → IN)" },
+  { id: "export", label: "Export" },
+  { id: "domestic", label: "Domestic" },
 ] as const;
 
-const VIEW_TABS = [
-  { id: "lanes", label: "Lanes" },
-  { id: "origin", label: "Origin detail" },
+const RESULT_TABS = [
+  { id: "results", label: "Best ports" },
+  { id: "origin", label: "Detail" },
   { id: "map", label: "Map" },
-  { id: "insights", label: "Policy" },
 ] as const;
 
-type ViewId = (typeof VIEW_TABS)[number]["id"];
+type WizardStep = 1 | 2 | 3;
+type ResultView = (typeof RESULT_TABS)[number]["id"];
 
 interface LanesApiOk {
   ok: true;
@@ -155,7 +149,6 @@ function toLaneRows(data: LanesApiOk): LaneRowView[] {
       citation: c.citation,
     });
   }
-  // Ranked first, then any insufficient-only candidates
   const rankedIds = new Set(data.ranked.map((r) => r.laneId));
   const ordered: LaneRowView[] = [];
   for (const r of data.ranked) {
@@ -169,16 +162,16 @@ function toLaneRows(data: LanesApiOk): LaneRowView[] {
 }
 
 export function DashboardClient() {
+  const [step, setStep] = useState<WizardStep>(1);
   const [laneMode, setLaneMode] = useState<LaneMode>("export");
   const [destinationId, setDestinationId] = useState(defaultDestination("export").id);
   const [containerType, setContainerType] = useState<ContainerType>(SAMPLE_INPUT.containerType);
   const [carrierId, setCarrierId] = useState<CarrierId>("msc");
   const [containerCount, setContainerCount] = useState(8);
-  const [view, setView] = useState<ViewId>("lanes");
+  const [resultView, setResultView] = useState<ResultView>("results");
 
   const [laneRows, setLaneRows] = useState<LaneRowView[]>([]);
   const [laneRec, setLaneRec] = useState<string | null>(null);
-  const [laneDestLabel, setLaneDestLabel] = useState<string | null>(null);
   const [saveInr, setSaveInr] = useState<number | null>(null);
   const [selectedLaneId, setSelectedLaneId] = useState<string | null>(null);
   const [portId, setPortId] = useState(SAMPLE_INPUT.portId);
@@ -186,14 +179,9 @@ export function DashboardClient() {
   const [result, setResult] = useState<RiskResult | null>(null);
   const [math, setMath] = useState<RiskMath | null>(null);
 
-  const [lanesLoading, setLanesLoading] = useState(true);
+  const [lanesLoading, setLanesLoading] = useState(false);
   const [riskLoading, setRiskLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const destinationOptions = useMemo(
-    () => destinationSelectOptions(laneMode),
-    [laneMode],
-  );
 
   const activeDestination = useMemo(() => {
     return (
@@ -210,7 +198,21 @@ export function DashboardClient() {
   const mapLaneLabel = useMemo(() => {
     const origin = PORTS.find((p) => p.id === portId);
     if (!origin || !mapDestination) return null;
-    return `${origin.name} → ${mapDestination.label}`;
+    const short =
+      origin.id === "jnpt"
+        ? "JNPT"
+        : origin.id === "mundra"
+          ? "Mundra"
+          : origin.id === "chennai"
+            ? "Chennai"
+            : origin.id === "cochin"
+              ? "Cochin"
+              : origin.id === "vizag"
+                ? "Vizag"
+                : origin.id === "kolkata"
+                  ? "Kolkata"
+                  : origin.name;
+    return `${short} → ${mapDestination.label}`;
   }, [portId, mapDestination]);
 
   const cargo = useMemo(
@@ -223,19 +225,18 @@ export function DashboardClient() {
     [containerType, carrierId, containerCount],
   );
 
-  const riskInput = useMemo<RiskInput>(
-    () => ({ ...cargo, portId }),
-    [cargo, portId],
-  );
+  const riskInput = useMemo<RiskInput>(() => ({ ...cargo, portId }), [cargo, portId]);
 
-  // Lane mode change → reset destination default
+  const destChoices = useMemo(() => destinationsForMode(laneMode), [laneMode]);
+
   useEffect(() => {
     const next = defaultDestination(laneMode);
     setDestinationId(next.id);
   }, [laneMode]);
 
-  // Fetch Layer-4 lanes
+  // Fetch lanes only when on results step
   useEffect(() => {
+    if (step !== 3) return;
     let cancelled = false;
     setLanesLoading(true);
     setError(null);
@@ -256,13 +257,8 @@ export function DashboardClient() {
         const rows = toLaneRows(data);
         setLaneRows(rows);
         setLaneRec(data.recommendation);
-        setLaneDestLabel(data.destination);
         setSaveInr(data.saveInrVsRunnerUp);
-
-        const pick =
-          rows.find((r) => r.originPortId === "jnpt" && r.status === "ok") ??
-          [...rows].filter((r) => r.status === "ok").sort((a, b) => b.demurrageInr - a.demurrageInr)[0] ??
-          rows.find((r) => r.status === "ok");
+        const pick = rows.find((r) => r.status === "ok") ?? null;
         if (pick) {
           setSelectedLaneId(pick.laneId);
           setPortId(pick.originPortId);
@@ -282,11 +278,10 @@ export function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [cargo, activeDestination.apiValue]);
+  }, [step, cargo, activeDestination.apiValue]);
 
-  // Fetch Layer-3 origin detail when port selected
   useEffect(() => {
-    if (!portId) return;
+    if (step !== 3 || !portId) return;
     let cancelled = false;
     setRiskLoading(true);
     fetch("/api/risk", {
@@ -329,24 +324,24 @@ export function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [riskInput]);
-
-  const carrierLabel =
-    CARRIER_OPTIONS.find((option) => option.value === carrierId)?.label ?? "Carrier";
+  }, [step, riskInput, portId]);
 
   const resetDemo = () => {
+    setStep(1);
     setLaneMode("export");
     setDestinationId("AEJEA");
     setContainerType("40ft");
     setCarrierId("msc");
     setContainerCount(8);
-    setView("lanes");
+    setResultView("results");
+    setLaneRows([]);
+    setError(null);
   };
 
   const onSelectLane = (row: LaneRowView) => {
     setSelectedLaneId(row.laneId);
     setPortId(row.originPortId);
-    setView("origin");
+    setResultView("origin");
   };
 
   const mapCostByPort = useMemo(() => {
@@ -357,39 +352,45 @@ export function DashboardClient() {
     return map;
   }, [laneRows]);
 
-  if (lanesLoading && laneRows.length === 0 && !error) {
-    return (
-      <div className="rounded-card border border-hairline bg-surface-2 px-6 py-16 text-center text-body text-ink-3">
-        Loading Layer 4 lanes…
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+    <div className="mx-auto w-full max-w-3xl space-y-5 sm:max-w-none sm:space-y-7">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <Eyebrow tone="accent" icon={<Route className="h-3.5 w-3.5" aria-hidden="true" />}>
-            Lane compare
+            Demurrage compare
           </Eyebrow>
-          <h1 className="mt-4 font-semibold text-display-2 text-ink">Lane demurrage compare</h1>
-          <p className="mt-3 max-w-xl text-body text-ink-3">
-            Compare Indian origin ports for your destination. Demurrage uses published carrier
-            tariffs ({DATA_PROVENANCE.tariffWindow}) plus a Port Sense dwell model on{" "}
-            {DATA_PROVENANCE.jnptDwellMonth} JNPA LDB (JNPT) and {DATA_PROVENANCE.otherPortsSnapshot}{" "}
-            snapshots for other gates — not live AIS. ₹0 is valid when estimated dwell sits inside
-            free time.
+          <h1 className="mt-3 text-title-1 font-semibold tracking-[-0.03em] text-ink sm:text-display-2">
+            {step === 1 && "Where are you shipping to?"}
+            {step === 2 && "Your boxes & carrier"}
+            {step === 3 && "Best Indian ports to ship from"}
+          </h1>
+          <p className="mt-2 max-w-xl text-small text-ink-3 sm:text-body">
+            {step === 1 && "Pick export or domestic, then the destination. We rank Indian origins for you."}
+            {step === 2 && "Container size, how many, and which shipping line’s free-time tariff to use."}
+            {step === 3 &&
+              `Best option first · demurrage only (not detention) · ${DATA_PROVENANCE.chip}`}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={resetDemo} leadingIcon={<RotateCcw className="h-3.5 w-3.5" />}>
-          Reset demo
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={resetDemo}
+          leadingIcon={<RotateCcw className="h-3.5 w-3.5" />}
+          className="shrink-0"
+          ariaLabel="Start over"
+        >
+          <span className="hidden sm:inline">Start over</span>
         </Button>
       </div>
 
-      <p className="rounded-card border border-hairline bg-surface-2 px-4 py-3 text-small text-ink-3">
-        {DATA_PROVENANCE.short} USA destination uses the same Indian-origin demurrage (ocean transit
-        not sourced). Choosing a ₹0 lane is fine when free time covers estimated dwell.
-      </p>
+      <WizardProgress
+        step={step}
+        allowJumpTo={step}
+        onJump={(next) => {
+          setStep(next);
+          if (next < 3) setResultView("results");
+        }}
+      />
 
       {error ? (
         <p className="rounded-card border border-risk-high/40 bg-risk-high/10 px-4 py-3 text-small text-ink">
@@ -397,46 +398,61 @@ export function DashboardClient() {
         </p>
       ) : null}
 
-      <Card tone="panel" padding="none" radius="card">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-7 sm:py-5">
-          <CardLabel icon={<SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />}>
-            Shipment parameters
-          </CardLabel>
-          <span className="text-label font-semibold uppercase text-ink-4">
-            {lanesLoading || riskLoading ? "Updating…" : laneDestLabel ?? "Ready"}
-          </span>
-        </div>
-
-        <div className="border-t border-hairline px-5 py-5 sm:px-7 sm:py-6">
-          <div className="mb-5">
-            <SegmentedControl
-              items={MODE_TABS}
-              value={laneMode}
-              onChange={setLaneMode}
-              label="Lane type"
-            />
+      {step === 1 && (
+        <section className="space-y-5">
+          <SegmentedControl
+            items={MODE_TABS}
+            value={laneMode}
+            onChange={setLaneMode}
+            label="Shipment type"
+            className="w-full"
+          />
+          <div>
+            <p className="mb-3 text-label font-semibold uppercase text-ink-4">Destination</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {destChoices.map((dest) => {
+                const active = dest.id === destinationId;
+                return (
+                  <button
+                    key={dest.id}
+                    type="button"
+                    onClick={() => setDestinationId(dest.id)}
+                    className={cn(
+                      "flex min-h-[4.5rem] flex-col items-start justify-center gap-1 rounded-card border px-3.5 py-3 text-left transition-colors",
+                      active
+                        ? "border-brand-orange/50 bg-brand-orange/15"
+                        : "border-hairline bg-surface-2 hover:bg-white/[0.05]",
+                    )}
+                  >
+                    <MapPin
+                      className={cn("h-4 w-4", active ? "text-brand-orange-soft" : "text-ink-4")}
+                      aria-hidden="true"
+                    />
+                    <span className="text-body font-semibold text-ink">{dest.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Destination" htmlFor="dest" hint={activeDestination.hint}>
-              <Select
-                id="dest"
-                value={destinationId}
-                options={destinationOptions}
-                onChange={setDestinationId}
-              />
-            </Field>
-            <Field label="Container" htmlFor="container" hint="Selects published 20′ / 40′ slab.">
+          <Button variant="primary" size="lg" fullWidth withArrow onClick={() => setStep(2)}>
+            Next · cargo details
+          </Button>
+        </section>
+      )}
+
+      {step === 2 && (
+        <section className="space-y-5">
+          <Card tone="panel" padding="md" className="space-y-4">
+            <Field label="Container size" htmlFor="container">
               <Select
                 id="container"
                 value={containerType}
                 options={CONTAINER_OPTIONS}
                 onChange={setContainerType}
+                className="h-12"
               />
             </Field>
-            <Field label="Carrier" htmlFor="carrier" hint="Layer-2 verified free time + slabs.">
-              <Select id="carrier" value={carrierId} options={CARRIER_OPTIONS} onChange={setCarrierId} />
-            </Field>
-            <Field label="Quantity" htmlFor="qty" hint="Up to 15 containers in this demo.">
+            <Field label="How many containers?" htmlFor="qty">
               <TextInput
                 id="qty"
                 type="number"
@@ -447,113 +463,180 @@ export function DashboardClient() {
                   const next = Number(value);
                   setContainerCount(Number.isFinite(next) ? Math.min(15, Math.max(1, next)) : 1);
                 }}
+                className="h-12"
               />
             </Field>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-5 py-4 sm:px-7">
-          <SummaryChip label="Mode" value={laneMode === "export" ? "Export" : "Domestic"} />
-          <SummaryChip
-            label="To"
-            value={activeDestination.label}
-            icon={<MapPin className="h-3.5 w-3.5 text-ink-4" aria-hidden="true" />}
-          />
-          <SummaryChip label="Box" value={CONTAINER_SHORT[containerType]} />
-          <SummaryChip label="Carrier" value={carrierLabel} />
-          <SummaryChip
-            label="Qty"
-            value={`${containerCount} ${containerCount === 1 ? "container" : "containers"}`}
-          />
-        </div>
-      </Card>
-
-      <SegmentedControl items={VIEW_TABS} value={view} onChange={setView} label="Dashboard views" />
-
-      {view === "lanes" && (
-        <section className="space-y-5 sm:space-y-6">
-          <h2 className="sr-only">Lane ranking</h2>
-
-          {laneRec ? (
-            <p className="rounded-card border border-hairline bg-surface-2 px-4 py-3 text-body text-ink-2">
-              <span className="text-label font-semibold uppercase text-ink-4">Pick · </span>
-              {laneRec}
-              {saveInr != null && saveInr > 0 ? (
-                <span className="ml-2 text-small text-risk-low">
-                  (saves {formatINR(saveInr)} vs next)
-                </span>
-              ) : null}
-            </p>
-          ) : null}
-
-          <LaneCompareTable
-            rows={laneRows}
-            selectedLaneId={selectedLaneId}
-            onSelectLane={onSelectLane}
-            title={`Origins → ${activeDestination.label}`}
-          />
-        </section>
-      )}
-
-      {view === "origin" && (
-        <section className="space-y-5 sm:space-y-6">
-          <h2 className="sr-only">Origin port detail</h2>
-          {riskLoading && !result ? (
-            <div className="rounded-card border border-hairline bg-surface-2 px-6 py-12 text-center text-body text-ink-3">
-              Loading origin detail…
-            </div>
-          ) : result ? (
-            <>
-              <KpiCards result={result} />
-              <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-                <CongestionChart port={result.port} />
-                <FormulaCard input={riskInput} math={math} />
-              </div>
-              <Card tone="outline" padding="sm">
-                <p className="max-w-2xl text-body text-ink-2">{result.recommendation}</p>
-                <p className="mt-2 text-small text-ink-3">{result.explanation}</p>
-              </Card>
-              <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <RateBreakdown result={result} defaultOpen />
-                <EquipmentStrip port={result.port} />
-              </div>
-            </>
-          ) : (
-            <p className="text-body text-ink-3">Select a ranked lane to open origin detail.</p>
-          )}
-        </section>
-      )}
-
-      {view === "map" && (
-        <section className="space-y-5">
-          <h2 className="sr-only">Port map</h2>
-          <Card tone="outline" padding="sm">
-            <p className="text-body text-ink-2">
-              From→to lane: Indian origins plus the selected destination (Jebel Ali / USA stub, or
-              another Indian port). Orange line is the selected origin; blue pin is destination.
-              Click an origin to open detail.
+            <Field label="Shipping line" htmlFor="carrier">
+              <Select
+                id="carrier"
+                value={carrierId}
+                options={CARRIER_OPTIONS}
+                onChange={setCarrierId}
+                className="h-12"
+              />
+            </Field>
+            <p className="rounded-panel border border-hairline bg-surface-0/40 px-3 py-2.5 text-small text-ink-3">
+              To: <span className="font-medium text-ink">{activeDestination.label}</span>
+              {" · "}
+              {laneMode === "export" ? "Export" : "Domestic"}
             </p>
           </Card>
-          <PortMap
-            ports={PORTS}
-            costByPortId={mapCostByPort}
-            selectedPortId={portId}
-            destination={mapDestination}
-            laneLabel={mapLaneLabel}
-            onSelectPort={(id) => {
-              setPortId(id);
-              const match = laneRows.find((r) => r.originPortId === id && r.status === "ok");
-              if (match) setSelectedLaneId(match.laneId);
-              setView("origin");
-            }}
-          />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              size="lg"
+              fullWidth
+              onClick={() => setStep(1)}
+              leadingIcon={<ArrowLeft className="h-4 w-4" />}
+            >
+              Back
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              withArrow
+              onClick={() => {
+                setResultView("results");
+                setStep(3);
+              }}
+            >
+              Compare ports
+            </Button>
+          </div>
         </section>
       )}
 
-      {view === "insights" && (
-        <section>
-          <h2 className="sr-only">Policy insights</h2>
-          <GovtInsights />
+      {step === 3 && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2 rounded-panel border border-hairline bg-surface-2/80 px-3 py-2.5 text-small text-ink-3">
+            <span>
+              To <strong className="text-ink">{activeDestination.label}</strong>
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>
+              {containerCount}×{CONTAINER_OPTIONS.find((c) => c.value === containerType)?.label}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{CARRIER_OPTIONS.find((c) => c.value === carrierId)?.label}</span>
+            <button
+              type="button"
+              className="ml-auto text-label font-semibold uppercase text-brand-orange-soft"
+              onClick={() => setStep(1)}
+            >
+              Edit
+            </button>
+          </div>
+
+          <SegmentedControl
+            items={RESULT_TABS}
+            value={resultView}
+            onChange={setResultView}
+            label="Result views"
+            className="w-full"
+          />
+
+          {resultView === "results" && (
+            <>
+              {lanesLoading ? (
+                <div className="rounded-card border border-hairline bg-surface-2 px-6 py-14 text-center text-body text-ink-3">
+                  Ranking ports…
+                </div>
+              ) : (
+                <>
+                  <LaneResultCards
+                    rows={laneRows}
+                    selectedLaneId={selectedLaneId}
+                    destinationLabel={activeDestination.label}
+                    recommendation={laneRec}
+                    saveInr={saveInr}
+                    onSelectLane={onSelectLane}
+                    onOpenMap={() => setResultView("map")}
+                  />
+                  <div className="hidden md:block">
+                    <LaneCompareTable
+                      rows={laneRows}
+                      selectedLaneId={selectedLaneId}
+                      onSelectLane={onSelectLane}
+                      title={`All origins → ${activeDestination.label}`}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {resultView === "origin" && (
+            <div className="space-y-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setResultView("results")}
+                leadingIcon={<ArrowLeft className="h-3.5 w-3.5" />}
+              >
+                Back to ranking
+              </Button>
+              {riskLoading && !result ? (
+                <div className="rounded-card border border-hairline bg-surface-2 px-6 py-12 text-center text-body text-ink-3">
+                  Loading origin detail…
+                </div>
+              ) : result ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-3 rounded-card border border-hairline bg-surface-2 px-4 py-3">
+                    <h2 className="text-title-3 font-semibold text-ink">{result.port.name}</h2>
+                    <RiskBadge level={result.riskLevel} score={result.congestionScore} size="sm" />
+                    <span className="ml-auto text-title-3 font-semibold tabular-nums text-brand-orange-soft">
+                      {formatINR(result.estimatedCostINR)}
+                    </span>
+                  </div>
+                  <KpiCards result={result} />
+                  <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+                    <CongestionChart port={result.port} />
+                    <FormulaCard input={riskInput} math={math} />
+                  </div>
+                  <Card tone="outline" padding="sm">
+                    <p className="text-body text-ink-2">{result.recommendation}</p>
+                    <p className="mt-2 text-small text-ink-3">{result.explanation}</p>
+                  </Card>
+                  <div className="grid items-start gap-4 lg:grid-cols-2">
+                    <RateBreakdown result={result} defaultOpen />
+                    <EquipmentStrip port={result.port} />
+                  </div>
+                </>
+              ) : (
+                <p className="text-body text-ink-3">Pick a ranked port first.</p>
+              )}
+            </div>
+          )}
+
+          {resultView === "map" && (
+            <div className="space-y-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setResultView("results")}
+                leadingIcon={<ArrowLeft className="h-3.5 w-3.5" />}
+              >
+                Back to ranking
+              </Button>
+              <p className="text-small text-ink-3">
+                Dashed orange = illustrative sea route (not land, not live AIS).
+              </p>
+              <PortMap
+                ports={PORTS}
+                costByPortId={mapCostByPort}
+                selectedPortId={portId}
+                destination={mapDestination}
+                laneLabel={mapLaneLabel}
+                onSelectPort={(id) => {
+                  setPortId(id);
+                  const match = laneRows.find((r) => r.originPortId === id && r.status === "ok");
+                  if (match) setSelectedLaneId(match.laneId);
+                  setResultView("origin");
+                }}
+              />
+            </div>
+          )}
         </section>
       )}
     </div>

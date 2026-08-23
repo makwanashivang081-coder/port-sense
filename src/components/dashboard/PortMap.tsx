@@ -12,6 +12,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import type { Port, RiskLevel } from "@/types";
 import type { MapDestinationPoint } from "@/lib/data/destinations";
+import { buildOceanRoute, type LatLng } from "@/lib/map/oceanRoute";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { formatINR } from "@/lib/utils";
 
@@ -27,28 +28,31 @@ const LEGEND: { level: RiskLevel; label: string }[] = [
   { level: "high", label: "High" },
 ];
 
-function FitLaneBounds({
-  origins,
-  destination,
-}: {
-  origins: Port[];
-  destination: MapDestinationPoint | null;
-}) {
+/** Short display names — avoid UN/LOCODE jargon on the map. */
+function shortPortName(port: Port): string {
+  if (port.id === "jnpt") return "JNPT";
+  if (port.id === "mundra") return "Mundra";
+  if (port.id === "chennai") return "Chennai";
+  if (port.id === "cochin") return "Cochin";
+  if (port.id === "vizag") return "Vizag";
+  if (port.id === "kolkata") return "Kolkata";
+  return port.name;
+}
+
+function FitLaneBounds({ points }: { points: LatLng[] }) {
   const map = useMap();
   useEffect(() => {
-    const points: [number, number][] = origins.map((p) => [p.lat, p.lng]);
-    if (destination) points.push([destination.lat, destination.lng]);
     if (points.length === 0) return;
     const lats = points.map((p) => p[0]);
     const lngs = points.map((p) => p[1]);
     map.fitBounds(
       [
-        [Math.min(...lats) - 2, Math.min(...lngs) - 2],
-        [Math.max(...lats) + 2, Math.max(...lngs) + 2],
+        [Math.min(...lats) - 1.5, Math.min(...lngs) - 1.5],
+        [Math.max(...lats) + 1.5, Math.max(...lngs) + 1.5],
       ],
       { padding: [48, 48] },
     );
-  }, [map, origins, destination]);
+  }, [map, points]);
   return null;
 }
 
@@ -59,11 +63,11 @@ function MapLegend() {
       <ul className="mt-2 flex flex-col gap-1.5 text-small text-ink-2">
         <li className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-brand-orange" aria-hidden="true" />
-          Selected origin → destination
+          Sea route (illustrative)
         </li>
         <li className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-sky-400" aria-hidden="true" />
-          Destination (Dubai / USA / IN)
+          Destination
         </li>
         {LEGEND.map(({ level, label }) => (
           <li key={level} className="flex items-center gap-2">
@@ -104,14 +108,18 @@ export function PortMap({
 
   const routeLine = useMemo(() => {
     if (!selected || !destination) return null;
-    return [
-      [selected.lat, selected.lng] as [number, number],
-      [destination.lat, destination.lng] as [number, number],
-    ];
+    return buildOceanRoute(selected, destination);
   }, [selected, destination]);
 
+  const fitPoints = useMemo(() => {
+    const pts: LatLng[] = ports.map((p) => [p.lat, p.lng]);
+    if (destination) pts.push([destination.lat, destination.lng]);
+    if (routeLine) pts.push(...routeLine);
+    return pts;
+  }, [ports, destination, routeLine]);
+
   return (
-    <div className="relative h-[26rem] overflow-hidden rounded-card border border-hairline shadow-lift sm:h-[34rem]">
+    <div className="relative h-64 overflow-hidden rounded-card border border-hairline shadow-lift sm:h-[28rem] lg:h-[34rem]">
       <MapContainer
         center={[20.5937, 78.9629]}
         zoom={4}
@@ -122,11 +130,11 @@ export function PortMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
-        <FitLaneBounds origins={ports} destination={destination} />
+        <FitLaneBounds points={fitPoints} />
 
         {routeLine ? (
           <Polyline
-            positions={routeLine}
+            positions={routeLine.map((p) => [p[0], p[1]] as [number, number])}
             pathOptions={{
               color: "#E8621A",
               weight: 3,
@@ -140,6 +148,7 @@ export function PortMap({
           const cost = costByPortId?.[port.id];
           const color = RISK_COLOR[port.riskLevel];
           const isSelected = port.id === selectedPortId;
+          const name = shortPortName(port);
           return (
             <CircleMarker
               key={port.id}
@@ -156,9 +165,9 @@ export function PortMap({
               <Popup>
                 <div className="flex min-w-[11rem] flex-col gap-2">
                   <div>
-                    <span className="block text-body font-semibold text-ink">{port.name}</span>
+                    <span className="block text-body font-semibold text-ink">{name}</span>
                     <span className="block text-label font-semibold uppercase text-ink-4">
-                      From · {port.code}
+                      From · {name}
                     </span>
                   </div>
                   <RiskBadge level={port.riskLevel} score={port.congestionScore} size="sm" />
@@ -192,6 +201,9 @@ export function PortMap({
                 {laneLabel ? (
                   <span className="mt-1 text-small text-ink-3">{laneLabel}</span>
                 ) : null}
+                <span className="mt-1 text-small text-ink-4">
+                  Dashed line = illustrative sea route (not live AIS).
+                </span>
               </div>
             </Popup>
           </CircleMarker>

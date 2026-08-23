@@ -45,7 +45,7 @@ export function LaneCompareTable({
   selectedLaneId,
   onSelectLane,
   title = "Ranked lanes",
-  description = "Demurrage at the Indian origin. Transit Unknown = no sourced sailing time. ₹0 is allowed when free time covers dwell.",
+  description = "We price demurrage (waiting fee at the Indian port) — not detention. Transit Unknown = no sourced sailing time. ₹0 is OK when free time covers dwell.",
 }: LaneCompareTableProps) {
   const okRows = rows.filter((r) => r.status === "ok");
   const bestId = okRows[0]?.laneId;
@@ -132,7 +132,7 @@ export function LaneCompareTable({
                     )}
                     <span className="block text-body font-medium text-ink">{row.label}</span>
                     <span className="block text-label font-semibold uppercase text-ink-4">
-                      {row.laneId}
+                      Demurrage at origin · not detention
                     </span>
                   </td>
                   <td className={CELL}>
