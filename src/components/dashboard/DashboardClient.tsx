@@ -620,7 +620,8 @@ export function DashboardClient() {
                 Back to ranking
               </Button>
               <p className="text-small text-ink-3">
-                Dashed orange = illustrative sea route (not land, not live AIS).
+                Straight orange line links the selected origin to the destination (schematic lane —
+                not a GPS sailing track).
               </p>
               <PortMap
                 ports={PORTS}

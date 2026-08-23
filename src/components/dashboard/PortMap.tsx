@@ -12,7 +12,6 @@ import {
 import "leaflet/dist/leaflet.css";
 import type { Port, RiskLevel } from "@/types";
 import type { MapDestinationPoint } from "@/lib/data/destinations";
-import { buildOceanRoute, type LatLng } from "@/lib/map/oceanRoute";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { formatINR } from "@/lib/utils";
 
@@ -39,20 +38,28 @@ function shortPortName(port: Port): string {
   return port.name;
 }
 
-function FitLaneBounds({ points }: { points: LatLng[] }) {
+function FitLaneBounds({
+  origins,
+  destination,
+}: {
+  origins: Port[];
+  destination: MapDestinationPoint | null;
+}) {
   const map = useMap();
   useEffect(() => {
+    const points: [number, number][] = origins.map((p) => [p.lat, p.lng]);
+    if (destination) points.push([destination.lat, destination.lng]);
     if (points.length === 0) return;
     const lats = points.map((p) => p[0]);
     const lngs = points.map((p) => p[1]);
     map.fitBounds(
       [
-        [Math.min(...lats) - 1.5, Math.min(...lngs) - 1.5],
-        [Math.max(...lats) + 1.5, Math.max(...lngs) + 1.5],
+        [Math.min(...lats) - 2, Math.min(...lngs) - 2],
+        [Math.max(...lats) + 2, Math.max(...lngs) + 2],
       ],
-      { padding: [48, 48] },
+      { padding: [40, 40] },
     );
-  }, [map, points]);
+  }, [map, origins, destination]);
   return null;
 }
 
@@ -63,7 +70,7 @@ function MapLegend() {
       <ul className="mt-2 flex flex-col gap-1.5 text-small text-ink-2">
         <li className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-brand-orange" aria-hidden="true" />
-          Sea route (illustrative)
+          Selected lane (straight link)
         </li>
         <li className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-sky-400" aria-hidden="true" />
@@ -108,15 +115,11 @@ export function PortMap({
 
   const routeLine = useMemo(() => {
     if (!selected || !destination) return null;
-    return buildOceanRoute(selected, destination);
+    return [
+      [selected.lat, selected.lng] as [number, number],
+      [destination.lat, destination.lng] as [number, number],
+    ];
   }, [selected, destination]);
-
-  const fitPoints = useMemo(() => {
-    const pts: LatLng[] = ports.map((p) => [p.lat, p.lng]);
-    if (destination) pts.push([destination.lat, destination.lng]);
-    if (routeLine) pts.push(...routeLine);
-    return pts;
-  }, [ports, destination, routeLine]);
 
   return (
     <div className="relative h-64 overflow-hidden rounded-card border border-hairline shadow-lift sm:h-[28rem] lg:h-[34rem]">
@@ -130,16 +133,15 @@ export function PortMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
-        <FitLaneBounds points={fitPoints} />
+        <FitLaneBounds origins={ports} destination={destination} />
 
         {routeLine ? (
           <Polyline
-            positions={routeLine.map((p) => [p[0], p[1]] as [number, number])}
+            positions={routeLine}
             pathOptions={{
               color: "#E8621A",
               weight: 3,
-              opacity: 0.85,
-              dashArray: "8 10",
+              opacity: 0.9,
             }}
           />
         ) : null}
@@ -202,7 +204,7 @@ export function PortMap({
                   <span className="mt-1 text-small text-ink-3">{laneLabel}</span>
                 ) : null}
                 <span className="mt-1 text-small text-ink-4">
-                  Dashed line = illustrative sea route (not live AIS).
+                  Straight line = selected from→to lane (schematic, not a sailing track).
                 </span>
               </div>
             </Popup>
