@@ -4,7 +4,7 @@ import { BRAND } from "@/lib/brand";
 
 export const metadata = {
   title: "Dashboard",
-  description: `Port congestion and demurrage risk calculator — ${BRAND.name}`,
+  description: `Lane demurrage compare (domestic + export) — ${BRAND.name}`,
 };
 
 export default function DashboardPage() {

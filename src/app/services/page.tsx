@@ -5,18 +5,19 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { BRAND } from "@/lib/brand";
+import { DATA_PROVENANCE } from "@/lib/data/provenance";
 import { cn } from "@/lib/utils";
 
 export const metadata = {
   title: "Services",
-  description: `Risk scoring, rupee estimates, port comparison and alerts — what ${BRAND.name} offers MSME exporters.`,
+  description: `Risk scoring, rupee estimates, port comparison and alerts — what ${BRAND.name} offers MSME exporters. ${DATA_PROVENANCE.chip}.`,
 };
 
 const SERVICES = [
   {
     icon: Shield,
     title: "Risk score",
-    body: "Low / Medium / High from congestion, queues and a 7-day outlook.",
+    body: `Low / Medium / High from congestion, queues and published dwell (${DATA_PROVENANCE.jnptDwellMonth} JNPT · ${DATA_PROVENANCE.otherPortsSnapshot} other gates).`,
     status: "Live",
     image: "/images/hero/night-port.jpg",
     alt: "Night operations at a container terminal",
@@ -24,7 +25,7 @@ const SERVICES = [
   {
     icon: BarChart3,
     title: "Rupee estimate",
-    body: "Tiered demurrage against published carrier tariffs, with the source cited.",
+    body: `Tiered demurrage against verified carrier tariffs (${DATA_PROVENANCE.tariffWindow}), with the source cited.`,
     status: "Live",
     image: "/images/hero/container-yard.jpg",
     alt: "Aerial container stacks in a port yard",
@@ -61,7 +62,7 @@ export default function ServicesPage() {
         index="01"
         eyebrow="Services"
         title="Four capabilities. One question: what will the wait cost?"
-        subtitle={`${BRAND.name} stays small on purpose — score, price, compare, share.`}
+        subtitle={`${BRAND.name} stays small on purpose — score, price, compare, share. ${DATA_PROVENANCE.chip}. Not live AIS.`}
         image="/images/hero/gantry.jpg"
         alt="Container vessel with an orange hull at golden hour"
         actions={

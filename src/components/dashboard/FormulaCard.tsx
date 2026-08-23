@@ -1,4 +1,4 @@
-import { explainRiskMath } from "@/lib/demurrageCalc";
+import type { RiskMath } from "@/lib/demurrageCalc";
 import { formatINR } from "@/lib/utils";
 import type { RiskInput } from "@/types";
 import { Card, CardLabel } from "@/components/ui/Card";
@@ -9,10 +9,23 @@ const BOX_LABEL: Record<string, string> = {
   "40hc": "40 ft HC",
 };
 
-export function FormulaCard({ input }: { input: RiskInput }) {
-  const math = explainRiskMath(input);
-  if (!math) return null;
+export function FormulaCard({
+  input,
+  math: mathProp,
+}: {
+  input: RiskInput;
+  math?: RiskMath | null;
+}) {
+  if (!mathProp) {
+    return (
+      <Card tone="outline" padding="md">
+        <CardLabel>How the rupees are built</CardLabel>
+        <p className="mt-3 text-small text-ink-3">Waiting for Layer-3 math from the API.</p>
+      </Card>
+    );
+  }
 
+  const math = mathProp;
   const insideFreeTime = math.billedDays === 0;
 
   return (
@@ -20,9 +33,9 @@ export function FormulaCard({ input }: { input: RiskInput }) {
       <CardLabel>How the rupees are built</CardLabel>
       <ol className="mt-4 flex flex-col gap-3">
         <li className="flex items-baseline justify-between gap-4 border-b border-hairline pb-3">
-          <span className="text-small text-ink-3">Extra dwell − free time</span>
+          <span className="text-small text-ink-3">Extra dwell vs free time</span>
           <span className="text-small font-medium tabular-nums text-ink">
-            {math.extraDwellDays}d − {math.freeDays}d
+            +{math.extraDwellDays}d over {math.freeDays}d free
           </span>
         </li>
         <li className="flex items-baseline justify-between gap-4 border-b border-hairline pb-3">
@@ -31,9 +44,11 @@ export function FormulaCard({ input }: { input: RiskInput }) {
         </li>
         <li className="flex items-baseline justify-between gap-4 border-b border-hairline pb-3">
           <span className="text-small text-ink-3">
-            {BOX_LABEL[input.containerType] ?? input.containerType} factor
+            {BOX_LABEL[input.containerType] ?? input.containerType} day-1 rate
           </span>
-          <span className="text-small font-medium tabular-nums text-ink">{math.multiplier}× 20 ft</span>
+          <span className="text-small font-medium tabular-nums text-ink">
+            {formatINR(math.dayOneRateINR)}
+          </span>
         </li>
         <li className="flex items-baseline justify-between gap-4">
           <span className="text-small text-ink-3">× {math.containerCount} containers</span>
@@ -45,7 +60,7 @@ export function FormulaCard({ input }: { input: RiskInput }) {
       <p className="mt-4 text-small text-ink-4">
         {insideFreeTime
           ? "Still inside carrier free time — estimated demurrage is zero on this forecast."
-          : `Each billed day uses that day’s published tariff, then × ${math.multiplier} × ${math.containerCount}. Open the rate breakdown for the day-by-day build.`}
+          : `Layer 3 slab math on Layer 2 verified tariffs × ${math.containerCount} containers.`}
       </p>
     </Card>
   );

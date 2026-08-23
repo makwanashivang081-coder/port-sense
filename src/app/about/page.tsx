@@ -6,10 +6,11 @@ import { Container } from "@/components/ui/Container";
 import { CardLabel } from "@/components/ui/Card";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { BRAND } from "@/lib/brand";
+import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
 export const metadata = {
   title: "About",
-  description: `Why ${BRAND.name} exists: demurrage intelligence built for Indian MSME exporters.`,
+  description: `Why ${BRAND.name} exists: demurrage intelligence built for Indian MSME exporters. ${DATA_PROVENANCE.chip}.`,
 };
 
 const PILLARS = [
@@ -40,7 +41,7 @@ export default function AboutPage() {
         index="01"
         eyebrow="About"
         title="Demurrage intelligence, built for the exporters who feel it most."
-        subtitle="A congestion score nobody can price is not a decision. We convert delay into rupees — before the booking is made."
+        subtitle={`A congestion score nobody can price is not a decision. We convert delay into rupees — before the booking is made. ${DATA_PROVENANCE.chip}: JNPT from JNPA LDB; other gates from ${DATA_PROVENANCE.otherPortsSnapshot} snapshots.`}
         image="/images/hero/jnpt.jpg"
         alt="Container vessel under orange ship-to-shore cranes"
         actions={
@@ -72,9 +73,8 @@ export default function AboutPage() {
               </h2>
               <p className="mt-5 max-w-xl text-lead text-ink-2">
                 {BRAND.name} predicts congestion from queues, dwell and equipment load, then prices
-                the delay against published carrier tiers. Every figure carries its source. The demo
-                runs on documented sample tariffs so a live feed can drop in without changing the
-                exporter&apos;s view.
+                the delay against published carrier tiers. Every figure carries its source.{" "}
+                {DATA_PROVENANCE.summary}
               </p>
             </div>
             <div className="relative aspect-[4/3] overflow-hidden rounded-card ring-1 ring-white/10">
@@ -85,6 +85,38 @@ export default function AboutPage() {
                 sizes="(max-width: 1024px) 92vw, 480px"
               />
             </div>
+          </div>
+
+          <div className="mt-10 rounded-card border border-hairline bg-surface-0/60 p-6 sm:p-8">
+            <CardLabel>Data period (for judges &amp; buyers)</CardLabel>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div>
+                <dt className="text-label font-semibold uppercase text-ink-4">JNPT dwell</dt>
+                <dd className="mt-1 text-title-3 font-semibold text-ink">
+                  {DATA_PROVENANCE.jnptDwellMonth}
+                </dd>
+                <dd className="mt-1 text-small text-ink-3">
+                  JNPA LDB month-end ({DATA_PROVENANCE.jnptPeriodKey}); series{" "}
+                  {DATA_PROVENANCE.jnpaSeries}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-label font-semibold uppercase text-ink-4">Other Indian ports</dt>
+                <dd className="mt-1 text-title-3 font-semibold text-ink">
+                  {DATA_PROVENANCE.otherPortsSnapshot}
+                </dd>
+                <dd className="mt-1 text-small text-ink-3">Published port dwell snapshots</dd>
+              </div>
+              <div>
+                <dt className="text-label font-semibold uppercase text-ink-4">Carrier tariffs</dt>
+                <dd className="mt-1 text-title-3 font-semibold text-ink">2023–2026</dd>
+                <dd className="mt-1 text-small text-ink-3">{DATA_PROVENANCE.tariffWindow}</dd>
+              </div>
+            </dl>
+            <p className="mt-5 text-small text-ink-3">
+              This is not a live AIS feed. Estimates help compare gates before booking; the carrier
+              invoice remains the contract of record.
+            </p>
           </div>
 
           <ul className="mt-12 grid gap-4 md:grid-cols-3">

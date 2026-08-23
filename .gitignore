@@ -10,6 +10,13 @@
 !.yarn/releases
 !.yarn/versions
 
+# local monorepo junctions (created by setup / agent)
+/vendor
+
+# layer package installs (sources + dist are committed)
+/packages/*/node_modules
+/packages/*/.turbo
+
 # testing
 /coverage
 

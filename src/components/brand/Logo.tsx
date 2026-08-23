@@ -26,7 +26,7 @@ const RADIUS: Record<LogoSize, string> = {
   hero: "rounded-[1.15rem]",
 };
 
-/** Harbor P — crane mast on the quay, pinging the basin. */
+/** Simple geometric P on an orange tile — reads at 32px. */
 export function LogoMark({
   className,
   size = "md",
@@ -38,7 +38,7 @@ export function LogoMark({
     <span
       className={cn(
         "relative flex shrink-0 items-center justify-center overflow-hidden",
-        "bg-[linear-gradient(155deg,#ff8a4a_0%,#e44d0e_42%,#9e2c06_100%)]",
+        "bg-[linear-gradient(155deg,#ff8a4a_0%,#e44d0e_46%,#9e2c06_100%)]",
         "shadow-[0_8px_20px_-10px_rgba(228,77,14,0.95),inset_0_1px_0_rgba(255,255,255,0.38)]",
         RADIUS[size],
         MARK_SIZES[size],
@@ -46,41 +46,14 @@ export function LogoMark({
       )}
       aria-hidden="true"
     >
-      <svg viewBox="0 0 32 32" fill="none" className="h-[72%] w-[72%]">
+      <svg viewBox="0 0 32 32" fill="none" className="h-[68%] w-[68%]">
         <path
-          d="M4 24.6h24"
+          d="M10 7.4h7.1c3.55 0 6.35 2.55 6.35 6.15S20.65 19.7 17.1 19.7H10V7.4Z"
           stroke="white"
-          strokeOpacity="0.32"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M8.4 24.6V7.8"
-          stroke="white"
-          strokeWidth="2.55"
-          strokeLinecap="round"
-        />
-        <path
-          d="M8.4 7.8h7.15c3.05 0 5.45 2.35 5.45 5.4s-2.4 5.4-5.45 5.4H8.4"
-          stroke="white"
-          strokeWidth="2.55"
+          strokeWidth="2.6"
           strokeLinejoin="round"
         />
-        <path
-          d="M11.2 24.6c3.9 0 7.05-3.15 7.05-7.05"
-          stroke="white"
-          strokeOpacity="0.7"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-        <path
-          d="M11.2 24.6c6.35 0 11.5-5.15 11.5-11.5"
-          stroke="white"
-          strokeOpacity="0.32"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-        <circle cx="11.2" cy="24.6" r="1.55" fill="white" />
+        <path d="M10 7.4V24.6" stroke="white" strokeWidth="2.6" strokeLinecap="round" />
       </svg>
     </span>
   );

@@ -7,6 +7,7 @@ import { calculateRisk } from "@/lib/demurrageCalc";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
 import { getPortById } from "@/lib/data/ports";
 import { formatDays, formatINR, cn } from "@/lib/utils";
+import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
 const FEATURED = ["jnpt", "chennai", "mundra"] as const;
 
@@ -51,7 +52,8 @@ export function ProblemSlide() {
             </h2>
             <p className="mt-3 max-w-xl text-body text-ink-2 sm:text-lead">
               India spends roughly 19% of GDP on logistics. A few idle days at a congested
-              terminal can erase the profit on an entire consignment.
+              terminal can erase the profit on an entire consignment. Port Sense prices that wait
+              from published baselines ({DATA_PROVENANCE.chip.toLowerCase()}), not a live AIS feed.
             </p>
             <ul className="mt-6 space-y-3">
               {LINES.map((line) => (

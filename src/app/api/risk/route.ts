@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { calculateRisk, explainRiskMath } from "@/lib/demurrageCalc";
 import { parseRiskInput } from "@/lib/risk/parseInput";
-import { getActiveTariffProvider } from "@/lib/tariffs/provider";
+import {
+  comparePortsWithLayers,
+  decideExportLaneWithLayers,
+  evaluateRiskWithLayers,
+} from "@/lib/layers/riskEngine";
 
 function run(raw: unknown) {
   const input = parseRiskInput(raw);
@@ -9,34 +12,72 @@ function run(raw: unknown) {
     return NextResponse.json({ ok: false, error: "Invalid shipment parameters." }, { status: 400 });
   }
 
-  const result = calculateRisk(input);
-  const math = explainRiskMath(input);
-  if (!result || !math) {
-    return NextResponse.json({ ok: false, error: "No tariff for this port / carrier." }, { status: 422 });
+  const payload = evaluateRiskWithLayers(input);
+  if (!payload) {
+    return NextResponse.json(
+      { ok: false, error: "No Layer-2 tariff / port mapping for this selection." },
+      { status: 422 },
+    );
   }
 
-  const tariffs = getActiveTariffProvider();
+  const compare = comparePortsWithLayers({
+    shipDate: input.shipDate,
+    containerType: input.containerType,
+    carrierId: input.carrierId,
+    containerCount: input.containerCount,
+  });
+
+  let laneDecision: {
+    recommendation: string;
+    winnerLabel: string | null;
+    saveInrVsRunnerUp: number | null;
+  } | null = null;
+  try {
+    const lane = decideExportLaneWithLayers({
+      shipDate: input.shipDate,
+      containerType: input.containerType,
+      carrierId: input.carrierId,
+      containerCount: input.containerCount,
+    });
+    laneDecision = {
+      recommendation: lane.recommendation,
+      winnerLabel: lane.winner?.lane.label ?? null,
+      saveInrVsRunnerUp: lane.saveInrVsRunnerUp,
+    };
+  } catch {
+    laneDecision = null;
+  }
 
   return NextResponse.json({
     ok: true,
-    mode: tariffs.mode,
-    asOf: tariffs.asOf,
+    mode: payload.mode,
+    asOf: payload.asOf,
+    honestyNote: payload.honestyNote,
     input,
     result: {
-      portId: result.port.id,
-      port: result.port.name,
-      code: result.port.code,
-      riskLevel: result.riskLevel,
-      congestionScore: result.congestionScore,
-      extraDwellDays: result.extraDwellDays,
-      chargeableDays: result.chargeableDays,
-      estimatedCostINR: result.estimatedCostINR,
-      costRange: result.costRange,
-      confidence: result.confidence,
-      recommendation: result.recommendation,
-      sourceCitation: result.sourceCitation,
+      portId: payload.result.port.id,
+      port: payload.result.port.name,
+      code: payload.result.port.code,
+      riskLevel: payload.result.riskLevel,
+      congestionScore: payload.result.congestionScore,
+      extraDwellDays: payload.result.extraDwellDays,
+      chargeableDays: payload.result.chargeableDays,
+      estimatedCostINR: payload.result.estimatedCostINR,
+      costRange: payload.result.costRange,
+      confidence: payload.result.confidence,
+      recommendation: payload.result.recommendation,
+      explanation: payload.result.explanation,
+      sourceCitation: payload.result.sourceCitation,
+      comparedAt: payload.result.comparedAt,
+      rateBreakdown: payload.result.rateBreakdown,
+      // full port object for dashboard widgets
+      portEntity: payload.result.port,
     },
-    math,
+    math: payload.math,
+    compare,
+    laneDecision,
+    explanation: payload.explanation,
+    estimate: payload.estimate,
   });
 }
 

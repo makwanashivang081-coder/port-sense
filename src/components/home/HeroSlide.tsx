@@ -7,6 +7,7 @@ import { RiskBadge } from "@/components/ui/RiskBadge";
 import { SlideFrame } from "@/components/home/SlideFrame";
 import { calculateRisk } from "@/lib/demurrageCalc";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
+import { DATA_PROVENANCE } from "@/lib/data/provenance";
 import { getPortById } from "@/lib/data/ports";
 import { BRAND } from "@/lib/brand";
 import { formatDays, formatINR } from "@/lib/utils";
@@ -28,10 +29,13 @@ export function HeroSlide() {
         width="wide"
         className="relative flex h-full min-h-0 flex-col pt-[5.75rem] pb-5 sm:pt-28 sm:pb-6"
       >
-        <div className="flex shrink-0 justify-center">
+        <div className="flex shrink-0 flex-col items-center gap-2">
           <Eyebrow tone="glass" icon={<Radio className="h-3.5 w-3.5" aria-hidden="true" />}>
             SIH 2026 · Demurrage intelligence
           </Eyebrow>
+          <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">
+            {DATA_PROVENANCE.chipDetail}
+          </p>
         </div>
 
         <div className="relative flex min-h-[24rem] flex-1 flex-col sm:min-h-0">
@@ -80,8 +84,10 @@ export function HeroSlide() {
                   <h1 className="font-display text-title-1 font-semibold tracking-[-0.03em] text-ink sm:text-display-2">
                     See the cost of waiting.
                   </h1>
-                  <p className="mt-2 max-w-sm text-small text-ink-2 sm:text-body">
-                    Congestion at Indian export ports, priced in rupees — before you book.
+                  <p className="mt-2 max-w-md text-small text-ink-2 sm:text-body">
+                    Congestion at Indian export ports, priced in rupees — before you book. Built on
+                    published {DATA_PROVENANCE.jnptDwellMonth} dwell (JNPT) and{" "}
+                    {DATA_PROVENANCE.otherPortsSnapshot} port snapshots — not live AIS.
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <Button href="/dashboard" variant="primary" size="md" withArrow>

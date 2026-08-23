@@ -2,26 +2,27 @@ import { Photo } from "@/components/ui/Photo";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { SlideFrame } from "@/components/home/SlideFrame";
+import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
 const STEPS = [
   {
     step: "01",
     title: "Sense congestion",
-    body: "Queues, extra dwell and yard load collapse into one score per Indian export port.",
+    body: `Queues and published dwell (JNPT ${DATA_PROVENANCE.jnptDwellMonth}; other ports ${DATA_PROVENANCE.otherPortsSnapshot}) collapse into one score per Indian export gate.`,
     image: "/images/hero/gantry.jpg",
     alt: "Container vessel with an orange hull at golden hour",
   },
   {
     step: "02",
     title: "Price it in rupees",
-    body: "Predicted delay runs against published carrier tiers, free days and your box count.",
+    body: `Predicted delay runs against verified carrier tiers (${DATA_PROVENANCE.tariffWindow}), free days and your box count.`,
     image: "/images/hero/jnpt.jpg",
     alt: "Low-angle vessel under orange ship-to-shore cranes",
   },
   {
     step: "03",
     title: "Act before booking",
-    body: "Proceed, wait, or reroute — one line of English, with the source behind every figure.",
+    body: "Proceed, wait, or reroute — one line of English, with the source month behind every figure. Not live AIS.",
     image: "/images/hero/container-yard.jpg",
     alt: "Aerial of a vessel being worked at a geometric container terminal",
   },
@@ -46,6 +47,7 @@ export function MethodSlide() {
           </div>
           <p className="max-w-sm text-body text-ink-3">
             No onboarding. No lakhs-a-year platform. Pick a port, pick a box, read the rupees.
+            Data period: {DATA_PROVENANCE.chip}.
           </p>
         </div>
 

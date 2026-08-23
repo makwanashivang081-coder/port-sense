@@ -5,11 +5,13 @@ import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { TextLink } from "@/components/ui/Button";
 import { BRAND } from "@/lib/brand";
+import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
 const POINTS = [
   "Free for small exporters — no enterprise contract needed",
   "Carrier-agnostic — not locked to a single shipping line",
   "Outputs rupees at risk, not delay jargon",
+  `${DATA_PROVENANCE.chip} — JNPT JNPA LDB; other ports ${DATA_PROVENANCE.otherPortsSnapshot}`,
 ] as const;
 
 export function AboutPreview() {
@@ -20,7 +22,7 @@ export function AboutPreview() {
           <SectionHeading
             eyebrow="Why we built it"
             title="Enterprise-grade port intelligence, sized for an MSME exporter"
-            description={`${BRAND.name} translates "the port is congested" into "here is the money you are about to lose" — before you commit to a booking. It aligns with the national push to cut logistics cost and with Sagarmala's EXIM efficiency goals.`}
+            description={`${BRAND.name} translates "the port is congested" into "here is the money you are about to lose" — before you commit to a booking. ${DATA_PROVENANCE.summary}`}
           />
 
           <ul className="mt-10 flex flex-col gap-4">
@@ -50,7 +52,7 @@ export function AboutPreview() {
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(5,11,20,0.8))]" />
               <figcaption className="absolute bottom-4 left-5 text-small font-medium text-white/90">
-                JNPT, Navi Mumbai
+                JNPT, Navi Mumbai · dwell {DATA_PROVENANCE.jnptDwellMonth}
               </figcaption>
             </figure>
             <div className="relative aspect-[4/3] overflow-hidden rounded-card ring-1 ring-white/8">

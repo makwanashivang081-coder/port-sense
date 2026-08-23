@@ -23,5 +23,7 @@ export const sampleTariffProvider: TariffProvider = {
 };
 
 export function getActiveTariffProvider(): TariffProvider {
+  // Dashboard / API use Layer 2–3 engines. This sample provider remains for
+  // static marketing pages that still call calculateRisk on the client.
   return sampleTariffProvider;
 }

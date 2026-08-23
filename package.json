@@ -3,13 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "layers:build": "npm run build --prefix ./packages/layer1 && npm run build --prefix ./packages/layer2 && npm run build --prefix ./packages/layer3 && npm run build --prefix ./packages/layer4 && npm run build --prefix ./packages/layer5",
+    "predev": "npm run layers:build",
+    "prebuild": "npm run layers:build",
+    "dev": "next dev --hostname 127.0.0.1 --port 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --hostname 127.0.0.1 --port 3000",
     "lint": "eslint",
     "stress": "npx --yes tsx scripts/stress-test.ts"
   },
   "dependencies": {
+    "@port-sense/layer1-ingestion": "file:./packages/layer1",
+    "@port-sense/layer2-canonical": "file:./packages/layer2",
+    "@port-sense/layer3-decision": "file:./packages/layer3",
+    "@port-sense/layer4-decision": "file:./packages/layer4",
+    "@port-sense/layer5-explanation": "file:./packages/layer5",
     "clsx": "^2.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.31.0",
@@ -18,6 +26,7 @@
     "react-dom": "19.2.8",
     "react-leaflet": "^5.0.0",
     "recharts": "^3.10.1",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

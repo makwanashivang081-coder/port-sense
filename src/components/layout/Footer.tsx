@@ -3,6 +3,7 @@ import { Logo } from "@/components/brand/Logo";
 import { Container } from "@/components/ui/Container";
 import { BRAND } from "@/lib/brand";
 import { PORTS } from "@/lib/data/ports";
+import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
 const COLUMNS = [
   {
@@ -31,7 +32,7 @@ export function Footer() {
             <Logo size="md" />
             <p className="mt-5 text-body text-ink-3">
               {BRAND.name} helps Indian MSME exporters price port congestion before they book —
-              carrier-agnostic, rupee-denominated, and free to use.
+              carrier-agnostic, rupee-denominated, and free to use. {DATA_PROVENANCE.short}
             </p>
           </div>
 
@@ -85,7 +86,8 @@ export function Footer() {
       <Container width="wide">
         <div className="flex flex-col items-center justify-between gap-3 border-t border-hairline py-6 text-small text-ink-4 sm:flex-row">
           <p>
-            © {new Date().getFullYear()} {BRAND.name} · Smart India Hackathon 2026
+            © {new Date().getFullYear()} {BRAND.name} · Smart India Hackathon 2026 ·{" "}
+            {DATA_PROVENANCE.chip}
           </p>
           <p>Built for Indian MSME exporters</p>
         </div>
