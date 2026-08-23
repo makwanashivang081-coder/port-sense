@@ -1,13 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import {
-  assertSnapshotExists,
-  getDefaultSnapshotPath,
-  createCanonicalClient,
-} from "@port-sense/layer2-canonical";
+import { createCanonicalClient } from "@port-sense/layer2-canonical";
 import { createDecisionRuntime } from "@port-sense/layer3-decision";
 import { createLaneRuntime, LANE_CATALOG } from "@port-sense/layer4-decision";
 import { createExplanationRuntime } from "@port-sense/layer5-explanation";
+import { resolveCanonicalSnapshotPath } from "@/lib/layers/snapshotPath";
 
 export interface LayerStatusRow {
   id: string;
@@ -69,9 +66,9 @@ export function getStackStatus(): {
 
   let l2Ready = false;
   let l2Facts = 0;
-  let l2Path = getDefaultSnapshotPath();
+  const l2Path = resolveCanonicalSnapshotPath();
   try {
-    l2Path = assertSnapshotExists();
+    if (!existsSync(l2Path)) throw new Error("missing");
     const client = createCanonicalClient(l2Path);
     l2Facts = client.store.getSnapshot().facts.length;
     l2Ready = l2Facts > 0;

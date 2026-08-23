@@ -12,6 +12,7 @@ import {
   createExplanationRuntime,
   type ExplanationRuntime,
 } from "@port-sense/layer5-explanation";
+import { resolveCanonicalSnapshotPath } from "@/lib/layers/snapshotPath";
 
 let decisionRuntime: DecisionRuntime | null = null;
 let laneRuntime: LaneRuntime | null = null;
@@ -19,14 +20,14 @@ let explanationRuntime: ExplanationRuntime | null = null;
 
 export function getDecisionRuntime(): DecisionRuntime {
   if (!decisionRuntime) {
-    decisionRuntime = createDecisionRuntime();
+    decisionRuntime = createDecisionRuntime(resolveCanonicalSnapshotPath());
   }
   return decisionRuntime;
 }
 
 export function getLaneRuntime(): LaneRuntime {
   if (!laneRuntime) {
-    laneRuntime = createLaneRuntime();
+    laneRuntime = createLaneRuntime(resolveCanonicalSnapshotPath());
   }
   return laneRuntime;
 }

@@ -7,6 +7,13 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   // Layer packages live under ./packages — keep tracing within the app root for Vercel
   outputFileTracingRoot: dir,
+  outputFileTracingIncludes: {
+    "/api/*": [
+      "./data/**/*",
+      "./packages/layer2/data/**/*",
+      "./packages/layer1/data/**/*",
+    ],
+  },
   // Prebuilt layer packages (NodeNext ESM) — do not bundle through Turbopack
   serverExternalPackages: [
     "@port-sense/layer1-ingestion",
