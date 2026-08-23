@@ -23,6 +23,7 @@
 # next.js
 /.next/
 /out/
+/port-sense/
 
 # production
 /build
