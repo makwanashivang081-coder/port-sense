@@ -481,13 +481,14 @@ export function DashboardClient() {
               {laneMode === "export" ? "Export" : "Domestic"}
             </p>
           </Card>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
               variant="outline"
               size="lg"
               fullWidth
               onClick={() => setStep(1)}
               leadingIcon={<ArrowLeft className="h-4 w-4" />}
+              className="order-2 min-w-0 sm:order-1"
             >
               Back
             </Button>
@@ -496,6 +497,7 @@ export function DashboardClient() {
               size="lg"
               fullWidth
               withArrow
+              className="order-1 min-w-0 sm:order-2"
               onClick={() => {
                 setResultView("results");
                 setStep(3);

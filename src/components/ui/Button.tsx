@@ -50,11 +50,11 @@ function buttonClass({
   className,
 }: Pick<ButtonProps, "variant" | "size" | "fullWidth" | "className">): string {
   return cn(
-    "group inline-flex shrink-0 items-center justify-center rounded-full font-semibold tracking-[-0.01em] transition-all duration-300 ease-[var(--ease-out-quint)]",
+    "group inline-flex items-center justify-center rounded-full font-semibold tracking-[-0.01em] transition-all duration-300 ease-[var(--ease-out-quint)]",
     "disabled:pointer-events-none disabled:opacity-50",
     VARIANTS[variant],
     SIZES[size],
-    fullWidth && "w-full",
+    fullWidth ? "w-full min-w-0" : "shrink-0",
     className,
   );
 }
