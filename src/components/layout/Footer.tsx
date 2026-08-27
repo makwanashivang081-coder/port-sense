@@ -7,7 +7,7 @@ import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
 const PRODUCT = [
   { href: "/dashboard", label: "Compare ports" },
-  { href: "/live", label: "Live board" },
+  { href: "/25-26", label: "25/26 cargo" },
   { href: "/services", label: "Services" },
 ] as const;
 
@@ -19,7 +19,10 @@ const COMPANY = [
 
 export function Footer() {
   return (
-    <footer className="relative mt-auto overflow-hidden border-t border-hairline bg-surface-0">
+    <footer
+      className="relative mt-auto overflow-hidden border-t border-hairline bg-surface-0"
+      suppressHydrationWarning
+    >
       <Container width="wide">
         <div className="grid items-center gap-6 border-b border-hairline py-10 lg:grid-cols-[1.2fr_1fr]">
           <div>
@@ -104,7 +107,7 @@ export function Footer() {
       <Container width="wide">
         <div className="flex flex-col items-center justify-between gap-3 border-t border-hairline py-6 text-small text-ink-4 sm:flex-row">
           <p>
-            © {new Date().getFullYear()} {BRAND.name} · Smart India Hackathon 2026 ·{" "}
+            © 2026 {BRAND.name} · Smart India Hackathon 2026 ·{" "}
             {DATA_PROVENANCE.chip}
           </p>
           <p>Built for Indian MSME exporters</p>

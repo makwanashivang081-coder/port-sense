@@ -41,7 +41,7 @@ export default function AboutPage() {
         index="01"
         eyebrow="About"
         title="Demurrage intelligence, built for the exporters who feel it most."
-        subtitle={`A congestion score nobody can price is not a decision. We convert delay into rupees — before the booking is made. ${DATA_PROVENANCE.chip}: JNPT from JNPA LDB; other gates from ${DATA_PROVENANCE.otherPortsSnapshot} snapshots.`}
+        subtitle="A congestion score nobody can price is not a decision. We convert delay into rupees — before the booking is made."
         image="/images/hero/jnpt.jpg"
         alt="Container vessel under orange ship-to-shore cranes"
         actions={
@@ -113,9 +113,8 @@ export default function AboutPage() {
               </div>
             </dl>
             <p className="mt-5 text-small text-ink-3">
-              This is not a live AIS feed. Estimates help compare gates before booking; the carrier
-              invoice remains the contract of record. Wait-fee calendar: {DATA_PROVENANCE.waitFeeCalendar}{" "}
-              Monthly cargo: {DATA_PROVENANCE.monthlyCargo}.
+              Estimates help compare gates before booking; the carrier invoice remains the contract
+              of record. {DATA_PROVENANCE.waitFeeCalendar}
             </p>
           </div>
 

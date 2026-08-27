@@ -1,6 +1,6 @@
 import type { ContainerType } from "@/types";
-import { haversineKm } from "@/lib/geo/haversine";
-import { getPtpkRate, PTPK_SOURCE, type PtpkMode } from "@/lib/land/ptpkRates";
+import { quoteFreightCost } from "@/lib/land/freightModel";
+import { PTPK_SOURCE, type PtpkMode } from "@/lib/land/ptpkRates";
 import { getStartLocation } from "@/lib/data/startLocations";
 import { PORTS } from "@/lib/data/ports";
 
@@ -14,7 +14,8 @@ export const INDICATIVE_PAYLOAD_TONNES: Record<ContainerType, number> = {
   "40hc": 22,
 };
 
-export const CARGO_COST_HONESTY = PTPK_SOURCE;
+export const CARGO_COST_HONESTY =
+  `${PTPK_SOURCE} Predicted cost is the freight model on that baseline (0.95–1.22 market overlay).`;
 
 export interface CargoModeQuote {
   readonly mode: PtpkMode;
@@ -22,6 +23,8 @@ export interface CargoModeQuote {
   readonly km: number;
   readonly ratePtpk: number;
   readonly tonnes: number;
+  readonly baselineCostInr: number;
+  readonly predictedCostInr: number;
   readonly costInr: number;
 }
 
@@ -34,6 +37,12 @@ export interface CargoHaulResult {
   readonly honestyNote: string;
 }
 
+const MODE_LABEL: Record<PtpkMode, string> = {
+  road: "Road",
+  rail_bulk: "Rail bulk",
+  rail_parcel: "Rail parcel",
+};
+
 export function payloadTonnes(containerType: ContainerType, containerCount: number): number {
   return INDICATIVE_PAYLOAD_TONNES[containerType] * Math.max(1, containerCount);
 }
@@ -43,29 +52,22 @@ export function quotePtpkHaul(
   to: { lat: number; lng: number; label: string },
   tonnes: number,
 ): CargoHaulResult {
-  const km = Math.round(haversineKm(from, to) * 100) / 100;
-  const weight = Math.max(0.01, tonnes);
-  const modes: Array<{ mode: PtpkMode; label: string }> = [
-    { mode: "road", label: "Road" },
-    { mode: "rail_bulk", label: "Rail bulk" },
-    { mode: "rail_parcel", label: "Rail parcel" },
-  ];
-  const quotes = modes.map(({ mode, label }) => {
-    const ratePtpk = getPtpkRate(km, mode);
-    return {
-      mode,
-      label,
-      km,
-      ratePtpk,
-      tonnes: weight,
-      costInr: Math.round(km * ratePtpk * weight),
-    };
-  });
+  const freight = quoteFreightCost(from, to, tonnes);
+  const quotes = freight.quotes.map((row) => ({
+    mode: row.mode,
+    label: MODE_LABEL[row.mode],
+    km: freight.km,
+    ratePtpk: row.ratePtpk,
+    tonnes: freight.tonnes,
+    baselineCostInr: row.baselineInr,
+    predictedCostInr: row.predictedInr,
+    costInr: row.predictedInr,
+  }));
   return {
     fromLabel: from.label,
     toLabel: to.label,
-    km,
-    tonnes: weight,
+    km: freight.km,
+    tonnes: freight.tonnes,
     quotes,
     honestyNote: CARGO_COST_HONESTY,
   };

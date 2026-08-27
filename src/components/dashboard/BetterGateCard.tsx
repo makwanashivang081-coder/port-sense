@@ -58,7 +58,7 @@ export function BetterGateCard({
           <p className="mt-2 text-small text-ink-2 sm:text-body">
             You started near {startLabel} ({preferredName}, #{preferredRank}
             {delta > 0 ? ` · ${formatINR(delta)} more` : ""}). {winnerName} ranks better on
-            estimated demurrage into {destinationLabel}. Inland haul rupees stay pending.
+            estimated demurrage into {destinationLabel}.
           </p>
         </>
       )}

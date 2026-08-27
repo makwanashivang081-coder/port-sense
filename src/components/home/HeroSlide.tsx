@@ -5,7 +5,6 @@ import { SlideFrame } from "@/components/home/SlideFrame";
 import { RouteStrip } from "@/components/dashboard/RouteStrip";
 import { calculateRisk } from "@/lib/demurrageCalc";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
-import { DATA_PROVENANCE } from "@/lib/data/provenance";
 import { getPortById } from "@/lib/data/ports";
 import { BRAND } from "@/lib/brand";
 import { formatINR } from "@/lib/utils";
@@ -37,30 +36,30 @@ export function HeroSlide() {
 
       <Container
         width="wide"
-        className="relative flex h-full min-h-0 flex-col justify-between pt-[5.75rem] pb-6 sm:pt-28 sm:pb-8"
+        className="relative flex h-full min-h-0 flex-col justify-center pt-[5.75rem] pb-6 sm:pt-28 sm:pb-8"
       >
-        <div className="max-w-2xl">
+        <div className="max-w-xl">
           <p className="text-label font-semibold uppercase tracking-[0.16em] text-brand-orange-soft">
-            SIH 2026 · {DATA_PROVENANCE.chip}
+            SIH 2026
           </p>
           <h1 className="mt-4 font-display text-display-2 font-semibold tracking-[-0.04em] text-ink sm:text-display-1">
             {BRAND.name}
           </h1>
-          <p className="mt-4 max-w-lg text-body text-ink-2 sm:text-lead">
-            Start from your city, then see whether that nearest gate — or a better one — wins on
-            estimated demurrage. Congestion priced in rupees, before you book. Not live AIS.
+          <p className="mt-4 max-w-md text-body text-ink-2 sm:text-lead">
+            Your nearest port is not always the cheapest. See the extra wait — and the inland haul —
+            in rupees, then pick a better Indian gate before you book.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button href="/dashboard" variant="primary" size="lg" withArrow>
               Compare ports
             </Button>
-            <Button href="/live" variant="outline" size="lg">
-              Live board
+            <Button href="/25-26" variant="outline" size="lg">
+              25/26 cargo
             </Button>
           </div>
         </div>
 
-        <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.7fr)] lg:items-end">
+        <div className="mt-10 grid max-w-3xl gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.7fr)] lg:items-end">
           <RouteStrip
             fromCode="STV"
             fromLabel="Surat"

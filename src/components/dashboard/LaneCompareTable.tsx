@@ -45,7 +45,7 @@ export function LaneCompareTable({
   selectedLaneId,
   onSelectLane,
   title = "Ranked lanes",
-  description = "We price demurrage (waiting fee at the Indian port) — not detention. Transit Unknown = no sourced sailing time. ₹0 is OK when free time covers dwell.",
+  description = "Waiting fee at the Indian port. ₹0 means the wait is still covered.",
 }: LaneCompareTableProps) {
   const okRows = rows.filter((r) => r.status === "ok");
   const bestId = okRows[0]?.laneId;

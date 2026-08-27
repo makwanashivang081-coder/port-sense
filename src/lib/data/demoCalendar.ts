@@ -73,7 +73,7 @@ export function demoDateSelectOptions(): Array<{
 }> {
   return DEMO_CALENDAR_DAYS.map((day) => ({
     value: day.date,
-    label: `${formatDayLabel(day.date)} · p90 ${Math.round(day.p90Hours)}h`,
+    label: formatDayLabel(day.date),
     group:
       day.bucket === "billed"
         ? "Wait fee (14 days · 70%)"

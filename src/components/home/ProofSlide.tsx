@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { SlideFrame } from "@/components/home/SlideFrame";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
-import { DATA_PROVENANCE } from "@/lib/data/provenance";
 import { compareAllPorts } from "@/lib/demurrageCalc";
 import { cn, formatDays, formatINR } from "@/lib/utils";
 
@@ -26,9 +25,7 @@ export function ProofSlide() {
           Extra dwell, five gates.
         </h2>
         <p className="mt-3 max-w-xl text-body text-ink-3">
-          Illustrative home sample. Product dashboard uses {DATA_PROVENANCE.jnptDwellMonth} JNPA LDB
-          for JNPT and {DATA_PROVENANCE.otherPortsSnapshot} snapshots elsewhere —{" "}
-          {DATA_PROVENANCE.chip.toLowerCase()}.
+          Illustrative home sample. Dashboard uses published extra dwell priced in rupees.
         </p>
 
         <ul className="mt-10 flex flex-col">

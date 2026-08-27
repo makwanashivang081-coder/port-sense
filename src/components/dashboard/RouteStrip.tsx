@@ -35,10 +35,12 @@ export function RouteStrip({
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="min-w-0 shrink-0">
           <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">{fromHint}</p>
-          <p className="mt-1 font-display text-title-2 font-semibold tracking-[-0.03em] text-ink">
+          <p className="mt-1 font-display text-title-3 font-semibold tracking-[-0.03em] text-ink sm:text-title-2">
             {fromCode}
           </p>
-          <p className="mt-0.5 max-w-[9rem] truncate text-small text-ink-3">{fromLabel}</p>
+          <p className="mt-0.5 max-w-[6.5rem] truncate text-[0.7rem] text-ink-3 sm:max-w-[9rem] sm:text-small">
+            {fromLabel}
+          </p>
         </div>
 
         <div className="relative min-h-8 min-w-0 flex-1">
@@ -57,10 +59,12 @@ export function RouteStrip({
 
         <div className="min-w-0 shrink-0 text-right">
           <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">{toHint}</p>
-          <p className="mt-1 font-display text-title-2 font-semibold tracking-[-0.03em] text-ink">
+          <p className="mt-1 font-display text-title-3 font-semibold tracking-[-0.03em] text-ink sm:text-title-2">
             {toCode}
           </p>
-          <p className="mt-0.5 max-w-[9rem] truncate text-small text-ink-3">{toLabel}</p>
+          <p className="mt-0.5 max-w-[6.5rem] truncate text-[0.7rem] text-ink-3 sm:max-w-[9rem] sm:text-small">
+            {toLabel}
+          </p>
         </div>
       </div>
     </div>

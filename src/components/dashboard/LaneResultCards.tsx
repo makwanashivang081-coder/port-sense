@@ -98,7 +98,7 @@ export function LaneResultCards({
                 See why this port
               </Button>
               <Button variant="outline" size="md" fullWidth onClick={onOpenMap}>
-                View globe
+                View route
               </Button>
             </div>
           </div>

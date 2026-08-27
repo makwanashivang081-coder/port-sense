@@ -48,6 +48,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#07111f",
   colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -61,7 +65,7 @@ export default function RootLayout({
       className={`${inter.variable} ${sora.variable} ${bebas.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body
-        className="flex min-h-full flex-col bg-surface-1 text-ink"
+        className="flex min-h-full flex-col overflow-x-hidden bg-surface-1 text-ink"
         suppressHydrationWarning
       >
         <a

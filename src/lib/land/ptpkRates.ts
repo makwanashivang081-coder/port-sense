@@ -5,7 +5,7 @@
 export type PtpkMode = "road" | "rail_bulk" | "rail_parcel";
 
 export const PTPK_SOURCE =
-  "Team logistics rate table (₹/tonne-km by distance slab). Inland km is great-circle, not GPS highway. Not a bill of lading.";
+  "Team ₹/t-km slabs × great-circle km. Not GPS highway, not a booked invoice.";
 
 const ROAD: ReadonlyArray<readonly [number, number]> = [
   [50, 7.14],

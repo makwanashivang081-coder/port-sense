@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/", label: "Home" },
-  { href: "/live", label: "Live" },
+  { href: "/25-26", label: "25/26" },
   { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
@@ -77,9 +77,10 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              className="group inline-flex h-11 items-center gap-2 rounded-full bg-brand-orange pl-5 pr-2 text-small font-semibold text-white transition-colors duration-300 hover:bg-brand-orange-soft"
+              className="group inline-flex h-10 items-center gap-1.5 rounded-full bg-brand-orange pl-3.5 pr-1.5 text-label font-semibold text-white transition-colors duration-300 hover:bg-brand-orange-soft sm:h-11 sm:gap-2 sm:pl-5 sm:pr-2 sm:text-small"
             >
-              Compare ports
+              <span className="sm:hidden">Compare</span>
+              <span className="hidden sm:inline">Compare ports</span>
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 transition-transform duration-300 ease-[var(--ease-out-quint)] group-hover:rotate-45">
                 <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
               </span>

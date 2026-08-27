@@ -41,10 +41,8 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { WaitFeeCalendar } from "@/components/dashboard/WaitFeeCalendar";
 import { RouteStrip } from "@/components/dashboard/RouteStrip";
-import { IpaVesselBoard, type IpaBoardView } from "@/components/live/IpaVesselBoard";
 import { LiveLanePreview } from "@/components/dashboard/LiveLanePreview";
 import { LandAdviceCard } from "@/components/dashboard/LandAdviceCard";
-import { MonthlyCargoNote } from "@/components/dashboard/MonthlyCargoNote";
 import { ExplanationCard } from "@/components/dashboard/ExplanationCard";
 import { adviseLandHaul } from "@/lib/land/landAdvice.service";
 import { quoteCityToPort } from "@/lib/land/cargoCost.service";
@@ -56,7 +54,7 @@ const PortGlobe = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-64 items-center justify-center rounded-card border border-hairline bg-[#020617] sm:h-[34rem]">
+      <div className="flex h-[min(72vw,20rem)] items-center justify-center rounded-card border border-hairline bg-[#020617] sm:h-[26rem]">
         <span className="flex items-center gap-2 text-label font-semibold uppercase text-ink-4">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-orange" aria-hidden="true" />
           Loading globe…
@@ -100,7 +98,7 @@ const MODE_TABS = [
 const RESULT_TABS = [
   { id: "results", label: "Best ports" },
   { id: "origin", label: "Detail" },
-  { id: "map", label: "Globe + map" },
+  { id: "map", label: "Map" },
 ] as const;
 
 type WizardStep = 1 | 2 | 3;
@@ -229,11 +227,10 @@ export function DashboardClient() {
   const [math, setMath] = useState<RiskMath | null>(null);
 
   const [lanesLoading, setLanesLoading] = useState(false);
+  const [lanesReady, setLanesReady] = useState(false);
   const [riskLoading, setRiskLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [asOfDate, setAsOfDate] = useState(DEMO_CALENDAR_DEFAULT);
-  const [ipaBoard, setIpaBoard] = useState<IpaBoardView | null>(null);
-  const [ipaDate, setIpaDate] = useState<string | null>(null);
 
   const startLocation = useMemo(() => getStartLocation(startLocationId), [startLocationId]);
 
@@ -275,29 +272,12 @@ export function DashboardClient() {
     setDestinationId(next.id);
   }, [laneMode]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const query = ipaDate ? `?asOfDate=${ipaDate}` : "";
-    fetch(`/api/vessels${query}`)
-      .then((r) => r.json())
-      .then((data: { ok?: boolean; board?: IpaBoardView }) => {
-        if (cancelled || !data.ok || !data.board) return;
-        setIpaBoard(data.board);
-        if (ipaDate !== data.board.asOfDate) setIpaDate(data.board.asOfDate);
-      })
-      .catch(() => {
-        if (!cancelled) setIpaBoard(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [ipaDate]);
-
   // Fetch ranked lanes as soon as cargo + date are on screen (step 2+), not only results
   useEffect(() => {
     if (step < 2) return;
     let cancelled = false;
     setLanesLoading(true);
+    setLanesReady(false);
     setError(null);
 
     fetch("/api/lanes", {
@@ -334,7 +314,10 @@ export function DashboardClient() {
         }
       })
       .finally(() => {
-        if (!cancelled) setLanesLoading(false);
+        if (!cancelled) {
+          setLanesLoading(false);
+          setLanesReady(true);
+        }
       });
     return () => {
       cancelled = true;
@@ -400,6 +383,7 @@ export function DashboardClient() {
     setLaneExplanation(null);
     setError(null);
     setAsOfDate(DEMO_CALENDAR_DEFAULT);
+    setLanesReady(false);
   };
 
   const onHighlightLane = (row: LaneRowView) => {
@@ -451,7 +435,7 @@ export function DashboardClient() {
   }, [portId, mapDestination]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5 sm:max-w-none sm:space-y-7">
+    <div className="mx-auto w-full max-w-3xl min-w-0 space-y-5 overflow-x-hidden sm:max-w-none sm:space-y-7">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Eyebrow tone="accent" icon={<Route className="h-3.5 w-3.5" aria-hidden="true" />}>
@@ -464,8 +448,8 @@ export function DashboardClient() {
           </h1>
           <p className="mt-2 max-w-xl text-small text-ink-3 sm:text-body">
             {step === 1 &&
-              "Start location is the factory or city. We pin the nearest modelled gate, then rank other gates on demurrage. Inland road/rail rupees stay pending until you feed rates."}
-            {step === 2 && "Container, carrier, and a verified wait-fee date. Ranking updates as soon as you pick a filled day. Air temperature is not used."}
+              "Start location is the factory or city. We pin the nearest modelled gate, then rank other gates on wait and inland haul."}
+            {step === 2 && "Pick the boxes, the line, and a wait-fee day. Ranking updates as you go."}
             {step === 3 && `Best option first · demurrage · ${asOfDate}`}
           </p>
         </div>
@@ -542,7 +526,7 @@ export function DashboardClient() {
                 );
               })}
             </div>
-            <p className="mt-2 text-small text-ink-4">{startLocation.hint}. Inland haul is not priced.</p>
+            <p className="mt-2 text-small text-ink-4">{startLocation.hint}.</p>
           </div>
           <div>
             <p className="mb-3 text-label font-semibold uppercase text-ink-4">Destination</p>
@@ -575,8 +559,7 @@ export function DashboardClient() {
             </div>
             {laneMode === "export" ? (
               <p className="mt-2 text-small text-ink-4">
-                Five overseas dests match the five domestic ones. Ranking is still Indian wait-fee
-                — ocean days stay unknown and are not invented.
+                Ranking is Indian wait-fee. Ocean days are not invented.
               </p>
             ) : null}
           </div>
@@ -621,10 +604,7 @@ export function DashboardClient() {
                 className="h-12"
               />
             </Field>
-            <Field
-              label="Wait-fee date"
-              hint="Verified 2023 JNPT event days. 2024 is the same month-day analog — not 2024 events. Empty cells stay closed."
-            >
+            <Field label="Wait-fee date">
               <WaitFeeCalendar
                 value={asOfDate}
                 freeDays={EXPORT_FREE_DAYS[carrierId]}
@@ -634,7 +614,7 @@ export function DashboardClient() {
           </Card>
           <LiveLanePreview
             rows={laneRows}
-            loading={lanesLoading}
+            loading={lanesLoading || !lanesReady}
             asOfDate={asOfDate}
             destinationLabel={activeDestination.label}
             selectedLaneId={selectedLaneId}
@@ -642,15 +622,6 @@ export function DashboardClient() {
             onSelectLane={onHighlightLane}
           />
           {landAdvice ? <LandAdviceCard advice={landAdvice} /> : null}
-          <MonthlyCargoNote asOfDate={asOfDate} />
-          {ipaBoard && ipaDate ? (
-            <IpaVesselBoard
-              board={ipaBoard}
-              asOfDate={ipaDate}
-              onDateChange={setIpaDate}
-              variant="compact"
-            />
-          ) : null}
           <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
               variant="outline"
@@ -715,11 +686,21 @@ export function DashboardClient() {
             toHint="Destination"
           />
 
+          <PortGlobe
+            ports={PORTS}
+            costByPortId={mapCostByPort}
+            selectedPortId={portId}
+            destination={mapDestination}
+            laneLabel={mapLaneLabel}
+            onSelectPort={(id) => {
+              setPortId(id);
+              const match = laneRows.find((r) => r.originPortId === id && r.status === "ok");
+              if (match) setSelectedLaneId(match.laneId);
+            }}
+          />
+
           <Card tone="panel" padding="md">
-            <Field
-              label="Wait-fee date"
-              hint="Change the day here — ranking below refreshes. 2024 is the 2023 month-day analog."
-            >
+            <Field label="Wait-fee date">
               <WaitFeeCalendar
                 value={asOfDate}
                 freeDays={EXPORT_FREE_DAYS[carrierId]}
@@ -728,7 +709,6 @@ export function DashboardClient() {
             </Field>
           </Card>
           {landAdvice ? <LandAdviceCard advice={landAdvice} /> : null}
-          <MonthlyCargoNote asOfDate={asOfDate} />
 
           <SegmentedControl
             items={RESULT_TABS}
@@ -737,15 +717,6 @@ export function DashboardClient() {
             label="Result views"
             className="w-full"
           />
-
-          {ipaBoard && ipaDate ? (
-            <IpaVesselBoard
-              board={ipaBoard}
-              asOfDate={ipaDate}
-              onDateChange={setIpaDate}
-              variant="compact"
-            />
-          ) : null}
 
           {resultView === "results" && (
             <>
@@ -764,7 +735,9 @@ export function DashboardClient() {
                     preferredPortId={startLocation.nearestPortId}
                     startLabel={startLocation.label}
                     onSelectLane={onSelectLane}
-                    onOpenMap={() => setResultView("map")}
+                    onOpenMap={() => {
+                      document.getElementById("route-globe")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }}
                   />
                   {laneExplanation ? <ExplanationCard explanation={laneExplanation} /> : null}
                   <div className="hidden md:block">
@@ -825,32 +798,9 @@ export function DashboardClient() {
 
           {resultView === "map" && (
             <div className="space-y-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setResultView("results")}
-                leadingIcon={<ArrowLeft className="h-3.5 w-3.5" />}
-              >
-                Back to ranking
-              </Button>
               <p className="text-small text-ink-3">
-                Globe and map use a schematic <strong className="text-ink">water path</strong>, not an
-                air great-circle. Orange/green on the map are road and rail from your start city
-                using the PTPK cargo table.
+                Same water path as the globe. Drag to pan.
               </p>
-              <PortGlobe
-                ports={PORTS}
-                costByPortId={mapCostByPort}
-                selectedPortId={portId}
-                destination={mapDestination}
-                laneLabel={mapLaneLabel}
-                onSelectPort={(id) => {
-                  setPortId(id);
-                  const match = laneRows.find((r) => r.originPortId === id && r.status === "ok");
-                  if (match) setSelectedLaneId(match.laneId);
-                  setResultView("origin");
-                }}
-              />
               {inlandHaul ? (
                 <CargoHaulCard haul={inlandHaul} seaKm={seaLane?.km ?? null} />
               ) : null}

@@ -4,7 +4,7 @@ import type { SelectOption } from "@/components/ui/Field";
 /**
  * Inland / city pickup for the booking wizard.
  * `nearestPortId` is the modelled gate we use as “your start gate”.
- * Inland haul rupees are not priced — land AI quotes stay pending until sourced rates.
+ * Inland haul uses the freight model (great-circle × team ₹/t-km).
  */
 export interface StartLocation {
   readonly id: string;

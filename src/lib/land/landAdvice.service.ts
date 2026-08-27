@@ -2,7 +2,6 @@ import { portShortLabel } from "@/lib/data/portLabels";
 import { formatINR } from "@/lib/utils";
 import { WAIT_FEE_HOT_INR } from "@/lib/land/thresholds";
 import { quoteInlandCost } from "@/lib/land/inlandRates.service";
-import { CARGO_COST_HONESTY } from "@/lib/land/cargoCost.service";
 import type {
   InlandLegQuote,
   InlandMode,
@@ -65,11 +64,7 @@ export function adviseLandHaul(request: LandAdviceRequest): LandAdvice {
   const saveInrVsNearest =
     nearest && recommended ? nearest.demurrageInr - recommended.demurrageInr : null;
 
-  const honestyNote =
-    `${request.startCityLabel} is not a ranked origin — nearest modelled gate is ${portShortLabel(request.nearestPortId)}. ` +
-    `Heat threshold is ${formatINR(WAIT_FEE_HOT_INR)} estimated demurrage at that gate. ` +
-    CARGO_COST_HONESTY +
-    " Foreign destination does not change Indian wait-fee in this model.";
+  const honestyNote = `${request.startCityLabel} is not a ranked origin — nearest modelled gate is ${portShortLabel(request.nearestPortId)}.`;
 
   if (!recommended) {
     return {

@@ -31,22 +31,35 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Indian grouping (12,34,567) — no Intl, so SSR and the browser always match. */
+function groupIndian(intDigits: string): string {
+  if (intDigits.length <= 3) return intDigits;
+  const last3 = intDigits.slice(-3);
+  const rest = intDigits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${rest},${last3}`;
+}
+
 export function formatINR(amount: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(amount);
+  const rounded = Math.round(amount);
+  const sign = rounded < 0 ? "-" : "";
+  return `${sign}₹${groupIndian(String(Math.abs(rounded)))}`;
 }
 
 /** Compact Indian-notation currency, e.g. ₹9.8Cr — for aggregate/policy figures. */
 export function formatINRCompact(amount: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(amount);
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+  if (abs >= 1e7) {
+    const cr = abs / 1e7;
+    const n = cr >= 10 ? cr.toFixed(0) : cr.toFixed(1).replace(/\.0$/, "");
+    return `${sign}₹${n}Cr`;
+  }
+  if (abs >= 1e5) {
+    const lakh = abs / 1e5;
+    const n = lakh >= 10 ? lakh.toFixed(0) : lakh.toFixed(1).replace(/\.0$/, "");
+    return `${sign}₹${n}L`;
+  }
+  return formatINR(amount);
 }
 
 export function formatIST(date: Date = new Date()): string {

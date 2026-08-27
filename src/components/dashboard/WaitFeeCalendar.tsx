@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  analog2023Date,
-  shiftYear,
-} from "@/lib/data/demoCalendar";
+import { shiftYear } from "@/lib/data/demoCalendar";
 import {
   isWaitFee,
   loadJnptCalendar,
@@ -39,11 +36,11 @@ const YEAR_TABS = [
 type CalendarYear = (typeof YEAR_TABS)[number]["id"];
 
 function daysInMonth(year: number, monthIndex: number): number {
-  return new Date(year, monthIndex + 1, 0).getDate();
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 }
 
 function mondayOffset(year: number, monthIndex: number): number {
-  const sundayIndex = new Date(year, monthIndex, 1).getDay();
+  const sundayIndex = new Date(Date.UTC(year, monthIndex, 1)).getUTCDay();
   return (sundayIndex + 6) % 7;
 }
 
@@ -67,7 +64,6 @@ export function WaitFeeCalendar({ value, freeDays, onChange }: WaitFeeCalendarPr
   const [year, setYear] = useState<CalendarYear>(selectedYear);
   const [monthIndex, setMonthIndex] = useState(selectedMonth);
   const [days, setDays] = useState<readonly JnptCalendarDay[]>([]);
-  const [analogNote, setAnalogNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -85,7 +81,6 @@ export function WaitFeeCalendar({ value, freeDays, onChange }: WaitFeeCalendarPr
       }
       setError(null);
       setDays(payload.days);
-      setAnalogNote(payload.analogNote);
     });
     return () => {
       cancelled = true;
@@ -108,11 +103,12 @@ export function WaitFeeCalendar({ value, freeDays, onChange }: WaitFeeCalendarPr
   }, [count, days, monthIndex, yearNum]);
 
   const goMonth = (delta: number) => {
-    const next = new Date(yearNum, monthIndex + delta, 1);
-    const nextYear = next.getFullYear();
+    const nextMonth = monthIndex + delta;
+    const next = new Date(Date.UTC(yearNum, nextMonth, 1));
+    const nextYear = next.getUTCFullYear();
     if (nextYear < 2023 || nextYear > 2024) return;
     setYear(String(nextYear) as CalendarYear);
-    setMonthIndex(next.getMonth());
+    setMonthIndex(next.getUTCMonth());
   };
 
   const onYearChange = (nextYear: CalendarYear) => {
@@ -153,9 +149,9 @@ export function WaitFeeCalendar({ value, freeDays, onChange }: WaitFeeCalendarPr
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {WEEKDAYS.map((label) => (
-          <p key={label} className="px-1 py-1 text-center text-label font-semibold uppercase text-ink-4">
+          <p key={label} className="px-0.5 py-1 text-center text-[0.58rem] font-semibold uppercase text-ink-4 sm:text-label">
             {label}
           </p>
         ))}
@@ -173,7 +169,7 @@ export function WaitFeeCalendar({ value, freeDays, onChange }: WaitFeeCalendarPr
               disabled={!enabled}
               onClick={() => onChange(cell.iso)}
               className={cn(
-                "flex min-h-[3.1rem] flex-col items-center justify-center rounded-lg border px-1 py-1 text-label tabular-nums",
+                "flex min-h-[2.55rem] flex-col items-center justify-center rounded-md border px-0.5 py-1 text-[0.7rem] tabular-nums sm:min-h-[3.1rem] sm:rounded-lg sm:px-1 sm:text-label",
                 !enabled && "cursor-not-allowed border-transparent text-ink-4/40",
                 enabled && !active && wait && "border-hairline bg-brand-orange/12 text-ink",
                 enabled && !active && !wait && "border-hairline bg-surface-0/40 text-ink-3",
@@ -196,22 +192,12 @@ export function WaitFeeCalendar({ value, freeDays, onChange }: WaitFeeCalendarPr
       {selected ? (
         <p className="rounded-panel border border-hairline bg-surface-0/40 px-3 py-2.5 text-small text-ink-3">
           {value}
-          {value.startsWith("2024") ? ` · analog ${analog2023Date(value)}` : ""}
-          {" · "}billed wait p90{" "}
-          <span className="font-semibold tabular-nums text-ink">{selected.p90Hours.toFixed(0)}h</span>
           {" · "}
-          {selected.count} verified events
-          {" · "}
-          {billed ? "wait fee on this carrier free time" : "inside free time (₹0)"}
+          <span className="font-semibold text-ink">{billed ? "Wait fee" : "No wait fee"}</span>
         </p>
       ) : (
-        <p className="text-small text-ink-4">Pick a filled day — empty cells have no verified JNPT events.</p>
+        <p className="text-small text-ink-4">Pick a filled day.</p>
       )}
-
-      <p className="text-label text-ink-4">
-        Wait fee = that day’s JNPT p90 above {freeDays} free days. Grey cells are not invented.
-        {year === "2024" && analogNote ? ` ${analogNote}` : ""}
-      </p>
     </div>
   );
 }

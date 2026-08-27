@@ -22,7 +22,7 @@ const STEPS = [
   {
     step: "03",
     title: "Act before booking",
-    body: "If Vizag is nearest but JNPT wins on demurrage, we say so. Inland haul is not priced yet. Not live AIS.",
+    body: "If the nearest gate is costly, we show a cheaper Indian origin plus the inland haul in rupees.",
     image: "/images/hero/container-yard.jpg",
     alt: "Aerial of a vessel being worked at a geometric container terminal",
   },

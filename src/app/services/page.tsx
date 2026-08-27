@@ -62,7 +62,7 @@ export default function ServicesPage() {
         index="01"
         eyebrow="Services"
         title="Four capabilities. One question: what will the wait cost?"
-        subtitle={`${BRAND.name} stays small on purpose — score, price, compare, share. ${DATA_PROVENANCE.chip}. Not live AIS.`}
+        subtitle={`${BRAND.name} stays small on purpose — score, price, compare, share. ${DATA_PROVENANCE.chip}.`}
         image="/images/hero/gantry.jpg"
         alt="Container vessel with an orange hull at golden hour"
         actions={

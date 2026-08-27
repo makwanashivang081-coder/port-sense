@@ -30,8 +30,7 @@ export function LiveLanePreview({
           Port compare · {asOfDate}
         </p>
         <p className="mt-1 text-small text-ink-3">
-          Estimated demurrage into {destinationLabel}. Updates when you pick a filled wait-fee
-          day. Destination does not change these Indian wait-fee numbers.
+          Estimated demurrage into {destinationLabel}. Updates when you change the day.
         </p>
       </div>
       {loading && ok.length === 0 ? (

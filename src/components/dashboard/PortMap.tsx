@@ -16,6 +16,7 @@ import { RiskBadge } from "@/components/ui/RiskBadge";
 import { formatINR } from "@/lib/utils";
 import { portShortLabel } from "@/lib/data/portLabels";
 import { oceanRouteWithKm } from "@/lib/map/oceanRoute";
+import { unwrapPath } from "@/lib/geo/haversine";
 import type { CargoHaulResult } from "@/lib/land/cargoCost.service";
 
 const RISK_COLOR: Record<RiskLevel, string> = {
@@ -44,12 +45,14 @@ function FitLaneBounds({
     if (points.length === 0) return;
     const lats = points.map((p) => p[0]);
     const lngs = points.map((p) => p[1]);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
     map.fitBounds(
       [
-        [Math.min(...lats) - 1.2, Math.min(...lngs) - 1.2],
-        [Math.max(...lats) + 1.2, Math.max(...lngs) + 1.2],
+        [Math.min(...lats) - 1.2, minLng - 1.2],
+        [Math.max(...lats) + 1.2, maxLng + 1.2],
       ],
-      { padding: [40, 40] },
+      { padding: [36, 36], maxZoom: 6 },
     );
   }, [map, origins, destination, start, seaPath]);
   return null;
@@ -95,7 +98,7 @@ export function PortMap({
   }, [selected, destination]);
 
   const seaLine = useMemo(
-    () => (sea ? sea.path.map(([lat, lng]) => [lat, lng] as [number, number]) : []),
+    () => (sea ? unwrapPath(sea.path) : []),
     [sea],
   );
 
@@ -122,7 +125,7 @@ export function PortMap({
   const railCost = inlandHaul?.quotes.find((q) => q.mode === "rail_bulk");
 
   return (
-    <div className="relative h-64 overflow-hidden rounded-card border border-hairline shadow-lift sm:h-[28rem] lg:h-[34rem]">
+    <div className="relative h-[min(72vw,20rem)] w-full overflow-hidden rounded-card border border-hairline shadow-lift sm:h-[26rem] lg:h-[32rem]">
       <MapContainer
         center={[20.5937, 78.9629]}
         zoom={4}
@@ -130,8 +133,8 @@ export function PortMap({
         className="h-full w-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; OpenStreetMap'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitLaneBounds
           origins={ports}
@@ -254,7 +257,7 @@ export function PortMap({
           </CircleMarker>
         ) : null}
       </MapContainer>
-      <div className="pointer-events-none absolute right-4 top-4 z-[500] max-w-[14rem] rounded-panel border border-hairline bg-surface-0/80 px-3.5 py-3 backdrop-blur-md">
+      <div className="pointer-events-none absolute right-2 top-2 z-[500] max-w-[min(14rem,calc(100%-1rem))] rounded-panel border border-hairline bg-surface-0/80 px-3 py-2.5 backdrop-blur-md sm:right-4 sm:top-4">
         <p className="text-label font-semibold uppercase text-ink-4">Map</p>
         <ul className="mt-2 space-y-1.5 text-small text-ink-2">
           <li className="flex items-center gap-2">
