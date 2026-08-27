@@ -1,11 +1,12 @@
 "use client";
 
 import {
+  Area,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
   Bar,
   BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,73 +14,104 @@ import {
 } from "recharts";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { AXIS_TICK, CHART_ACCENT, CURSOR_LINE, GRID_STROKE } from "@/components/dashboard/chartTheme";
-import { formatTonnesCompact } from "@/lib/data/monthlyCargo";
+import { formatTonnesAxis, formatTonnesCompact } from "@/lib/layer2/monthlyCargo";
 import { formatINR, formatINRCompact } from "@/lib/utils";
-import type { CargoMonthPoint, PortCargoTotal, SavingsRow } from "@/lib/data/year2526";
+import type { CargoMonthPoint, PortCargoTotal, SavingsRow } from "@/lib/layer2/year2526";
 
-const PORT_COLORS: Record<string, string> = {
-  jnpt: "var(--brand-orange)",
-  vizag: "#f5c16c",
-  chennai: "#7dd3fc",
-  kolkata: "#c4b5fd",
-  cochin: "#86efac",
-};
+const PORT_SERIES = [
+  { key: "jnpt", label: "JNPT", color: "#E8621A" },
+  { key: "vizag", label: "Vizag", color: "#f5c16c" },
+  { key: "chennai", label: "Chennai", color: "#7dd3fc" },
+  { key: "kolkata", label: "Kolkata", color: "#c4b5fd" },
+  { key: "cochin", label: "Cochin", color: "#86efac" },
+] as const;
 
 interface Year2526ChartsProps {
   series: readonly CargoMonthPoint[];
   portTotals: readonly PortCargoTotal[];
-  savings: readonly SavingsRow[];
+  lostRows: readonly SavingsRow[];
 }
 
-export function Year2526Charts({ series, portTotals, savings }: Year2526ChartsProps) {
-  const transit = series.map((row) => ({ label: row.label, Transit: row.total }));
-  const saveData = savings
+export function Year2526Charts({ series, portTotals, lostRows }: Year2526ChartsProps) {
+  const transit = series.map((row) => ({
+    label: row.label,
+    jnpt: row.byPort.jnpt,
+    vizag: row.byPort.vizag,
+    chennai: row.byPort.chennai,
+    kolkata: row.byPort.kolkata,
+    cochin: row.byPort.cochin,
+    total: row.total,
+  }));
+  const lostData = lostRows
     .filter((row) => row.savedInr > 0)
-    .map((row) => ({ label: row.label, Saved: row.savedInr }));
+    .map((row) => ({ label: row.label, Lost: row.savedInr }));
 
   return (
     <div className="grid min-w-0 gap-4">
       <article className="min-w-0 rounded-card border border-hairline bg-surface-2 p-3 sm:p-5">
         <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">Total transit</p>
-        <h3 className="mt-1 text-title-3 font-semibold text-ink">Cargo handled each month</h3>
-        <div className="mt-3 h-48 w-full min-w-0 sm:h-64">
+        <h3 className="mt-1 text-title-3 font-semibold text-ink">Tonnes handled, stacked by gate</h3>
+        <p className="mt-1 text-small text-ink-4">Unit is tonnes of cargo — not TEU, not wait-fee.</p>
+        <div className="mt-3 h-56 w-full min-w-0 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={transit} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+            <ComposedChart data={transit} margin={{ top: 12, right: 8, left: 4, bottom: 4 }}>
+              <defs>
+                {PORT_SERIES.map((port) => (
+                  <linearGradient key={port.key} id={`fill-${port.key}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={port.color} stopOpacity={0.85} />
+                    <stop offset="100%" stopColor={port.color} stopOpacity={0.12} />
+                  </linearGradient>
+                ))}
+              </defs>
               <CartesianGrid vertical={false} stroke={GRID_STROKE} />
               <XAxis dataKey="label" axisLine={false} tickLine={false} tick={AXIS_TICK} interval="preserveStartEnd" />
               <YAxis
                 axisLine={false}
                 tickLine={false}
                 tick={AXIS_TICK}
-                width={44}
-                tickFormatter={(value: number) => formatTonnesCompact(value).replace(" t", "")}
+                width={52}
+                tickFormatter={formatTonnesAxis}
               />
               <Tooltip content={<ChartTooltip formatValue={formatTonnesCompact} />} />
-              <Line type="monotone" dataKey="Transit" stroke={CHART_ACCENT} strokeWidth={2.4} dot={false} />
-            </LineChart>
+              <Legend
+                wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}
+                iconType="circle"
+                iconSize={8}
+              />
+              {PORT_SERIES.map((port) => (
+                <Area
+                  key={port.key}
+                  type="monotone"
+                  dataKey={port.key}
+                  name={port.label}
+                  stackId="transit"
+                  stroke={port.color}
+                  fill={`url(#fill-${port.key})`}
+                  strokeWidth={1.2}
+                />
+              ))}
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </article>
 
       <article className="min-w-0 rounded-card border border-hairline bg-surface-2 p-3 sm:p-5">
-        <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">Money they could have saved</p>
-        <h3 className="mt-1 text-title-3 font-semibold text-ink">Vs the cheapest Indian gate</h3>
+        <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">Total lost</p>
+        <h3 className="mt-1 text-title-3 font-semibold text-ink">Wait money vs the cheapest gate</h3>
         <div className="mt-3 h-48 w-full min-w-0 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={saveData} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
+            <BarChart data={lostData} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
               <CartesianGrid vertical={false} stroke={GRID_STROKE} />
               <XAxis dataKey="label" axisLine={false} tickLine={false} tick={AXIS_TICK} />
               <YAxis
                 axisLine={false}
                 tickLine={false}
                 tick={AXIS_TICK}
-                width={48}
-                tickFormatter={(value: number) =>
-                  value >= 100000 ? formatINRCompact(value) : `₹${Math.round(value / 1000)}k`
-                }
+                width={52}
+                tickFormatter={(value: number) => formatINRCompact(value)}
               />
               <Tooltip cursor={CURSOR_LINE} content={<ChartTooltip formatValue={formatINR} />} />
-              <Bar dataKey="Saved" fill={CHART_ACCENT} radius={[8, 8, 0, 0]} maxBarSize={48} />
+              <Bar dataKey="Lost" fill={CHART_ACCENT} radius={[8, 8, 0, 0]} maxBarSize={48} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -92,14 +124,12 @@ export function Year2526Charts({ series, portTotals, savings }: Year2526ChartsPr
           {portTotals.map((row) => {
             const max = portTotals[0]?.tonnes || 1;
             const width = Math.max(8, (row.tonnes / max) * 100);
+            const color = PORT_SERIES.find((p) => p.key === row.portId)?.color ?? CHART_ACCENT;
             return (
               <li key={row.portId} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-2 sm:grid-cols-[5.5rem_1fr_auto] sm:gap-3">
                 <span className="truncate text-small text-ink-2">{row.label}</span>
                 <div className="h-2 overflow-hidden rounded-full bg-white/8">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${width}%`, background: PORT_COLORS[row.portId] ?? CHART_ACCENT }}
-                  />
+                  <div className="h-full rounded-full" style={{ width: `${width}%`, background: color }} />
                 </div>
                 <span className="text-small font-semibold tabular-nums text-ink">
                   {formatTonnesCompact(row.tonnes)}

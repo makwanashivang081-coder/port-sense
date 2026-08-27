@@ -1,1 +1,0 @@
-{"version":3,"file":"schema-detection.engine.d.ts","sourceRoot":"","sources":["../../src/engines/schema-detection.engine.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAkB,YAAY,EAAE,MAAM,oBAAoB,CAAC;AAqDvE;;GAEG;AACH,qBAAa,qBAAqB;IAChC,MAAM,CAAC,OAAO,EAAE,SAAS,MAAM,EAAE,GAAG,YAAY,EAAE;IAsElD,wDAAwD;IACxD,mBAAmB,CAAC,OAAO,EAAE,SAAS,MAAM,EAAE,GAAG,MAAM,EAAE;CAK1D"}

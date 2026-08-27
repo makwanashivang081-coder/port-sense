@@ -13,8 +13,9 @@
 # local monorepo junctions (created by setup / agent)
 /vendor
 
-# layer package installs (sources + dist are committed)
+# layer package installs (source is committed; dist is built by `npm run layers:build`)
 /packages/*/node_modules
+/packages/*/dist
 /packages/*/.turbo
 
 # testing

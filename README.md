@@ -5,10 +5,10 @@ Demurrage intelligence website for Indian MSME exporters.
 ## Structure
 
 ```text
-C:\SIH\
-├── port-sense/       ← Next.js website (this app)
-├── data-sources/     ← Official data proof (screenshots + manifest)
-└── assets/           ← Brand and equipment images
+port-sense/                 ← this git repo (Next.js app + layer packages)
+  packages/layer1…7         ← engines (see ARCHITECTURE.md)
+  src/lib/layer2…7          ← UI-facing facts / cost / lanes / clock
+  src/app                   ← pages
 ```
 
 ## Run locally
@@ -26,7 +26,8 @@ Open [http://localhost:3000](http://localhost:3000)
 | Route | Description |
 |-------|-------------|
 | `/` | Marketing home (navy hero, container focal) |
-| `/dashboard` | Demurrage risk dashboard |
+| `/dashboard` | Compare Indian ports for a destination |
+| `/25-26` | 2025–26 cargo tonnes + wait money lost |
 | `/about` | About us |
 | `/services` | Product services |
 | `/contact` | Contact form |
@@ -38,4 +39,4 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Data sources
 
-See `C:\SIH\data-sources\manifest.json` and `screenshots/` for official source documentation.
+See `ARCHITECTURE.md` and `C:\SIH\data-sources\manifest.json` for official source documentation.

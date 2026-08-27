@@ -4,6 +4,7 @@ import { createCanonicalClient } from "@port-sense/layer2-canonical";
 import { createDecisionRuntime } from "@port-sense/layer3-decision";
 import { createLaneRuntime, LANE_CATALOG } from "@port-sense/layer4-decision";
 import { createExplanationRuntime } from "@port-sense/layer5-explanation";
+import { createInlandRuntime } from "@port-sense/layer6-inland";
 import { createTimeRuntime } from "@port-sense/layer7-time";
 import { resolveCanonicalSnapshotPath } from "@/lib/layers/snapshotPath";
 
@@ -116,6 +117,19 @@ export function getStackStatus(): {
     l5Ready = false;
   }
 
+  let l6Ready = false;
+  try {
+    const inland = createInlandRuntime();
+    const quote = inland.quoteFreightCost(
+      { lat: 28.6139, lng: 77.209 },
+      { lat: 18.9499, lng: 72.9515 },
+      20,
+    );
+    l6Ready = quote.km > 0 && quote.quotes.length === 3;
+  } catch {
+    l6Ready = false;
+  }
+
   let l7Ready = false;
   let ipaLatest: string | null = null;
   try {
@@ -155,7 +169,7 @@ export function getStackStatus(): {
     },
     {
       id: "layer4",
-      name: "Lanes + Decide",
+      name: "Lane builder",
       ready: l4Ready,
       detail: l4Ready ? `${laneCount} catalog lanes` : "catalog unavailable",
       lastAt: null,
@@ -168,19 +182,19 @@ export function getStackStatus(): {
       lastAt: null,
     },
     {
+      id: "layer6",
+      name: "Inland haul",
+      ready: l6Ready,
+      detail: l6Ready ? "PTPK × great-circle km" : "unavailable",
+      lastAt: null,
+    },
+    {
       id: "layer7",
       name: "Time engine",
       ready: l7Ready,
       detail: l7Ready
         ? `calendar temp + IPA vessels ${ipaLatest ?? ""}`.trim()
         : "temperature did not move",
-      lastAt: null,
-    },
-    {
-      id: "land",
-      name: "Land AI",
-      ready: true,
-      detail: "PTPK slabs · great-circle inland km",
       lastAt: null,
     },
   ];

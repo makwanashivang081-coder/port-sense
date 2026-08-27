@@ -1,6 +1,8 @@
-# Layer 4 — Decision
+# Layer 4 — Lane Builder
 
 Lane Builder → Comparator → Decision Engine.
+
+This package is **not** inland haul. Inland ₹ lives in **Layer 6**.
 
 - **Domestic:** modelled Indian gates into each other (JNPT, Chennai, Cochin, Vizag, Kolkata)  
 - **Export:** those gates → Jebel Ali / Los Angeles  

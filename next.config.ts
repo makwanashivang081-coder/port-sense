@@ -22,6 +22,7 @@ const nextConfig: NextConfig = {
     "@port-sense/layer3-decision",
     "@port-sense/layer4-decision",
     "@port-sense/layer5-explanation",
+    "@port-sense/layer6-inland",
     "@port-sense/layer7-time",
     "xlsx",
   ],
