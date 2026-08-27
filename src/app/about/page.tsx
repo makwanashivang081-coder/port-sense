@@ -96,8 +96,7 @@ export default function AboutPage() {
                   {DATA_PROVENANCE.jnptDwellMonth}
                 </dd>
                 <dd className="mt-1 text-small text-ink-3">
-                  JNPA LDB month-end ({DATA_PROVENANCE.jnptPeriodKey}); series{" "}
-                  {DATA_PROVENANCE.jnpaSeries}
+                  JNPA LDB month-end ({DATA_PROVENANCE.jnptPeriodKey})
                 </dd>
               </div>
               <div>
