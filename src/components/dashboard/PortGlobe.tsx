@@ -231,10 +231,10 @@ export function PortGlobe({
             pathPointLat="lat"
             pathPointLng="lng"
             pathPointAlt="alt"
-            pathColor={(d) =>
-              (d as WaterPath).highlight ? ["#E8621A", "#7dd3fc"] : "rgba(148,163,184,0.32)"
+            pathColor={(d: WaterPath) =>
+              d.highlight ? ["#E8621A", "#7dd3fc"] : "rgba(148,163,184,0.32)"
             }
-            pathStroke={(d) => ((d as WaterPath).highlight ? 1.85 : 0.55)}
+            pathStroke={(d: WaterPath) => (d.highlight ? 1.85 : 0.55)}
             pathDashLength={0.014}
             pathDashGap={0.009}
             pathDashAnimateTime={4200}
