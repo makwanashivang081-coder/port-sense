@@ -49,10 +49,10 @@ function FitLaneBounds({
     const maxLng = Math.max(...lngs);
     map.fitBounds(
       [
-        [Math.min(...lats) - 1.2, minLng - 1.2],
-        [Math.max(...lats) + 1.2, maxLng + 1.2],
+        [Math.min(...lats) - 3.5, minLng - 3.5],
+        [Math.max(...lats) + 3.5, maxLng + 3.5],
       ],
-      { padding: [36, 36], maxZoom: 6 },
+      { padding: [52, 52], maxZoom: 4, animate: true },
     );
   }, [map, origins, destination, start, seaPath]);
   return null;
@@ -125,11 +125,11 @@ export function PortMap({
   const railCost = inlandHaul?.quotes.find((q) => q.mode === "rail_bulk");
 
   return (
-    <div className="relative h-[min(72vw,20rem)] w-full overflow-hidden rounded-card border border-hairline shadow-lift sm:h-[26rem] lg:h-[32rem]">
+    <div className="relative h-[min(82vw,24rem)] w-full overflow-hidden rounded-card border border-hairline shadow-lift sm:h-[30rem] lg:h-[36rem]">
       <MapContainer
         center={[20.5937, 78.9629]}
-        zoom={4}
-        scrollWheelZoom={false}
+        zoom={3}
+        scrollWheelZoom={true}
         className="h-full w-full"
       >
         <TileLayer

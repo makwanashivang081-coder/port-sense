@@ -75,7 +75,7 @@ export function cargoMonthSeries(): CargoMonthPoint[] {
   });
 }
 
-export function cargoPortTotals(): PortCargoTotal[] {
+export function cargoPortTotalsFromSeries(series: readonly CargoMonthPoint[]): PortCargoTotal[] {
   const sums: Record<Year2526PortId, number> = {
     jnpt: 0,
     chennai: 0,
@@ -83,7 +83,7 @@ export function cargoPortTotals(): PortCargoTotal[] {
     vizag: 0,
     kolkata: 0,
   };
-  for (const point of cargoMonthSeries()) {
+  for (const point of series) {
     for (const portId of YEAR_2526_PORTS) {
       sums[portId] += point.byPort[portId];
     }
@@ -93,6 +93,18 @@ export function cargoPortTotals(): PortCargoTotal[] {
     label: portShortLabel(portId),
     tonnes: sums[portId],
   })).sort((a, b) => b.tonnes - a.tonnes);
+}
+
+export function cargoPortTotals(): PortCargoTotal[] {
+  return cargoPortTotalsFromSeries(cargoMonthSeries());
+}
+
+export function seriesForCalendarYear(
+  series: readonly CargoMonthPoint[],
+  year: 2025 | 2026,
+): CargoMonthPoint[] {
+  const prefix = `${year}-`;
+  return series.filter((point) => point.periodKey.startsWith(prefix));
 }
 
 export function extraWaitForTypicalBooking(): ExtraWaitRow[] {
@@ -189,25 +201,68 @@ export function lostByPort(
     .sort((a, b) => b.savedInr - a.savedInr);
 }
 
-export function transitStats(series: readonly CargoMonthPoint[], extraWait: readonly ExtraWaitRow[]) {
+export interface YearSliceStats {
+  readonly year: 2025 | 2026 | "combined";
+  readonly heading: string;
+  readonly rangeLabel: string;
+  readonly months: number;
+  readonly totalTransit: number;
+  readonly totalLost: number;
+  readonly lostRows: readonly SavingsRow[];
+}
+
+function sliceFromSeries(
+  series: readonly CargoMonthPoint[],
+  extraWait: readonly ExtraWaitRow[],
+  meta: Pick<YearSliceStats, "year" | "heading" | "rangeLabel">,
+): YearSliceStats {
+  const savings = savingsVsCheapest(extraWait);
+  const totals = cargoPortTotalsFromSeries(series);
+  const lostRows = lostByPort(savings, totals);
+  const totalLost = lostRows.reduce((sum, row) => sum + row.savedInr, 0);
   const totalTransit = series.reduce((sum, row) => sum + row.total, 0);
-  const months = Math.max(1, series.length);
-  const avgMonthlyTransit = totalTransit / months;
+  return {
+    ...meta,
+    months: series.length,
+    totalTransit,
+    totalLost,
+    lostRows,
+  };
+}
+
+export function transitStats(series: readonly CargoMonthPoint[], extraWait: readonly ExtraWaitRow[]) {
+  const y2025Series = seriesForCalendarYear(series, 2025);
+  const y2026Series = seriesForCalendarYear(series, 2026);
+  const combined = sliceFromSeries(series, extraWait, {
+    year: "combined",
+    heading: "Combined",
+    rangeLabel: "Oct 2025 – Jul 2026",
+  });
+  const y2025 = sliceFromSeries(y2025Series, extraWait, {
+    year: 2025,
+    heading: "2025",
+    rangeLabel: "Oct – Dec 2025",
+  });
+  const y2026 = sliceFromSeries(y2026Series, extraWait, {
+    year: 2026,
+    heading: "2026",
+    rangeLabel: "Jan – Jul 2026",
+  });
+  const months = Math.max(1, combined.months);
   const avgExtraDays =
     extraWait.reduce((sum, row) => sum + row.extraDwellDays, 0) / Math.max(1, extraWait.length);
   const savings = savingsVsCheapest(extraWait);
-  const totals = cargoPortTotals();
-  const lostRows = lostByPort(savings, totals);
-  const totalLost = lostRows.reduce((sum, row) => sum + row.savedInr, 0);
-  const maxSaved = savings[0]?.savedInr ?? 0;
   return {
-    totalTransit,
+    totalTransit: combined.totalTransit,
     months,
-    avgMonthlyTransit,
+    avgMonthlyTransit: combined.totalTransit / months,
     avgExtraDays,
-    totalLost,
-    maxSaved,
+    totalLost: combined.totalLost,
+    maxSaved: savings[0]?.savedInr ?? 0,
     savings,
-    lostRows,
+    lostRows: combined.lostRows,
+    y2025,
+    y2026,
+    combined,
   };
 }

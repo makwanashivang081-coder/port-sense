@@ -36,21 +36,48 @@ export default function Year2526Page() {
             Transit moved. Wait money lost.
           </h1>
           <p className="mt-3 text-small text-ink-2 sm:text-body">
-            Ten months of cargo at five ports. <strong className="font-semibold text-ink">Tonnes</strong> means
-            cargo handled — not boxes. The rupees are extra wait vs {cheapest?.label ?? "the cheapest gate"},
+            Ten months of cargo at five ports, split by calendar year. <strong className="font-semibold text-ink">Tonnes</strong> means
+            cargo handled — not boxes. Rupees are extra wait vs {cheapest?.label ?? "the cheapest gate"},
             not an audited carrier invoice.
           </p>
         </header>
 
-        <dl className="mt-8 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-          <div className="min-w-0 rounded-card border border-hairline bg-surface-2 px-3 py-3 sm:px-4 sm:py-4">
-            <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-ink-4 sm:text-label">
-              Total transit
-            </dt>
-            <dd className="mt-1.5 break-words font-display text-title-3 font-semibold tabular-nums text-ink sm:text-title-2">
-              {formatTonnesCompact(stats.totalTransit)}
-            </dd>
-          </div>
+        <dl className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+          {([stats.y2025, stats.y2026, stats.combined] as const).map((slice) => {
+            const isTotal = slice.year === "combined";
+            return (
+              <div
+                key={slice.heading}
+                className={
+                  isTotal
+                    ? "min-w-0 rounded-card border border-brand-orange/30 bg-brand-orange/10 px-4 py-4"
+                    : "min-w-0 rounded-card border border-hairline bg-surface-2 px-4 py-4"
+                }
+              >
+                <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-ink-4 sm:text-label">
+                  {slice.heading}
+                  <span className="mt-0.5 block font-medium normal-case tracking-normal text-ink-4">
+                    {slice.rangeLabel} · {slice.months} mo
+                  </span>
+                </dt>
+                <dd
+                  className={
+                    isTotal
+                      ? "mt-2 break-words font-display text-title-2 font-semibold tabular-nums text-brand-orange-soft"
+                      : "mt-2 break-words font-display text-title-2 font-semibold tabular-nums text-ink"
+                  }
+                >
+                  {formatINRCompact(slice.totalLost)}
+                </dd>
+                <dd className="mt-1 text-small text-ink-3">
+                  lost · {formatTonnesCompact(slice.totalTransit)} moved
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+
+        <dl className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
           <div className="min-w-0 rounded-card border border-hairline bg-surface-2 px-3 py-3 sm:px-4 sm:py-4">
             <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-ink-4 sm:text-label">
               <span className="sm:hidden">Avg / month</span>
@@ -68,18 +95,15 @@ export default function Year2526Page() {
               {formatDays(stats.avgExtraDays)}
             </dd>
           </div>
-          <div className="min-w-0 rounded-card border border-brand-orange/30 bg-brand-orange/10 px-3 py-3 sm:px-4 sm:py-4">
-            <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-ink-4 sm:text-label">
-              Total lost
-            </dt>
-            <dd className="mt-1.5 break-words font-display text-title-3 font-semibold tabular-nums text-brand-orange-soft sm:text-title-2">
-              {formatINRCompact(stats.totalLost)}
-            </dd>
-          </div>
         </dl>
 
         <div className="mt-6 min-w-0">
-          <Year2526Charts series={series} portTotals={ports} lostRows={stats.lostRows} />
+          <Year2526Charts
+            series={series}
+            portTotals={ports}
+            lost2025={stats.y2025.lostRows}
+            lost2026={stats.y2026.lostRows}
+          />
         </div>
 
         <section className="mt-6 grid min-w-0 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
@@ -91,7 +115,8 @@ export default function Year2526Page() {
               Same boxes. Wrong gate. That gap is the extra invoice.
             </h2>
             <p className="mt-3 text-small text-ink-2 sm:text-body">
-              Total lost is {formatINR(stats.totalLost)} across these ten months: extra wait vs{" "}
+              Combined lost is {formatINR(stats.combined.totalLost)}: {formatINR(stats.y2025.totalLost)}{" "}
+              in 2025 (Oct–Dec) plus {formatINR(stats.y2026.totalLost)} in 2026 (Jan–Jul). Extra wait vs{" "}
               {cheapest?.label ?? "the cheapest gate"}, counted as one 8 × 40ft lot per 1 lakh tonnes
               handled. Most cargo is not a delayed box — this is a slice, not every tonne.{" "}
               {BRAND.name} prices the gate before you book.
@@ -109,8 +134,8 @@ export default function Year2526Page() {
               <li>{YEAR_2526_SOURCE.tonnesNote}</li>
               <li>{YEAR_2526_SOURCE.file}</li>
               <li>
-                Total lost uses published extra dwell × tariff on that modelled lot. Not a 2025–26 daily wait
-                CSV.
+              Combined lost is extra dwell × tariff on that modelled lot, split by calendar year of the
+              cargo month. Not a 2025–26 daily wait CSV.
               </li>
               <li>
                 <a

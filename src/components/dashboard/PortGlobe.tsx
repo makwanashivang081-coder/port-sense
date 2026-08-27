@@ -8,6 +8,7 @@ import { formatINR } from "@/lib/utils";
 import { portShortLabel } from "@/lib/data/portLabels";
 import { oceanRouteWithKm } from "@/lib/map/oceanRoute";
 import { makeEarthTexture } from "@/lib/map/earthTexture";
+import { shortestLngDelta, wrapLng, type LatLng } from "@/lib/geo/haversine";
 
 const RISK_COLOR: Record<RiskLevel, string> = {
   low: "#22C55E",
@@ -28,6 +29,56 @@ interface GlobePoint {
 
 interface WaterPath {
   coords: Array<{ lat: number; lng: number; alt: number }>;
+  highlight: boolean;
+}
+
+function splitWaterPath(path: readonly LatLng[], highlight: boolean): WaterPath[] {
+  const segments: WaterPath[] = [];
+  let coords: WaterPath["coords"] = [];
+  for (let i = 0; i < path.length; i += 1) {
+    const [lat, lng] = path[i]!;
+    const prev = coords[coords.length - 1];
+    if (prev && Math.abs(lng - prev.lng) > 180) {
+      if (coords.length >= 2) segments.push({ coords, highlight });
+      coords = [];
+    }
+    coords.push({ lat, lng, alt: highlight ? 0.008 : 0.003 });
+  }
+  if (coords.length >= 2) segments.push({ coords, highlight });
+  return segments;
+}
+
+function viewForCoverage(
+  ports: readonly Port[],
+  destination: MapDestinationPoint | null,
+  path: readonly LatLng[] | null,
+): { lat: number; lng: number; altitude: number } {
+  const pts: Array<{ lat: number; lng: number }> = ports.map((port) => ({
+    lat: port.lat,
+    lng: port.lng,
+  }));
+  if (destination) pts.push({ lat: destination.lat, lng: destination.lng });
+  if (path) {
+    for (const [lat, lng] of path) pts.push({ lat, lng });
+  }
+  if (pts.length === 0) return { lat: 12, lng: 78, altitude: 2.75 };
+
+  const lats = pts.map((p) => p.lat);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const anchor = pts[0]!.lng;
+  const unwrapped = pts.map((p) => anchor + shortestLngDelta(anchor, p.lng));
+  const minLng = Math.min(...unwrapped);
+  const maxLng = Math.max(...unwrapped);
+
+  const latSpan = Math.max(22, maxLat - minLat + 10);
+  const lngSpan = Math.max(22, maxLng - minLng + 10);
+  const span = Math.max(latSpan, lngSpan);
+  return {
+    lat: (minLat + maxLat) / 2,
+    lng: wrapLng((minLng + maxLng) / 2),
+    altitude: Math.min(3.55, Math.max(2.7, span / 20)),
+  };
 }
 
 interface PortGlobeProps {
@@ -80,6 +131,13 @@ export function PortGlobe({
     return oceanRouteWithKm(selected, destination);
   }, [selected, destination]);
 
+  const otherSeas = useMemo(() => {
+    if (!destination) return [];
+    return ports
+      .filter((port) => port.id !== selectedPortId)
+      .map((port) => oceanRouteWithKm(port, destination));
+  }, [ports, selectedPortId, destination]);
+
   const points = useMemo<GlobePoint[]>(() => {
     const originPoints: GlobePoint[] = ports.map((port) => ({
       lat: port.lat,
@@ -106,34 +164,18 @@ export function PortGlobe({
   }, [ports, selectedPortId, destination, costByPortId]);
 
   const paths = useMemo<WaterPath[]>(() => {
-    if (!sea) return [];
-    const segments: WaterPath[] = [];
-    let coords: WaterPath["coords"] = [];
-    for (let i = 0; i < sea.path.length; i += 1) {
-      const [lat, lng] = sea.path[i]!;
-      const prev = coords[coords.length - 1];
-      if (prev && Math.abs(lng - prev.lng) > 180) {
-        if (coords.length >= 2) segments.push({ coords });
-        coords = [];
-      }
-      coords.push({ lat, lng, alt: 0.006 });
+    const out: WaterPath[] = [];
+    for (const other of otherSeas) {
+      out.push(...splitWaterPath(other.path, false));
     }
-    if (coords.length >= 2) segments.push({ coords });
-    return segments;
-  }, [sea]);
+    if (sea) out.push(...splitWaterPath(sea.path, true));
+    return out;
+  }, [sea, otherSeas]);
 
-  const lookAt = useMemo(() => {
-    const far =
-      destination != null &&
-      (destination.lng < 0 || destination.lat > 45 || Math.abs(destination.lng) > 100);
-    const midLat = destination && selected ? (selected.lat + destination.lat) / 2 : 12;
-    let midLng = 78;
-    if (destination && selected) {
-      const raw = (selected.lng + destination.lng) / 2;
-      midLng = destination.lng < 0 ? 150 : raw;
-    }
-    return { lat: midLat, lng: midLng, altitude: far ? 2.9 : 2.05 };
-  }, [selected, destination]);
+  const lookAt = useMemo(
+    () => viewForCoverage(ports, destination, sea?.path ?? null),
+    [ports, destination, sea],
+  );
 
   const ready = Boolean(earthUrl) && size.w > 24 && size.h > 24;
 
@@ -145,7 +187,7 @@ export function PortGlobe({
     <div id="route-globe" className="space-y-2">
       <div
         ref={wrapRef}
-        className="relative h-[min(72vw,20rem)] w-full overflow-hidden rounded-card border border-hairline bg-[#020617] shadow-lift sm:h-[26rem] lg:h-[32rem]"
+        className="relative h-[min(82vw,24rem)] w-full overflow-hidden rounded-card border border-hairline bg-[#020617] shadow-lift sm:h-[30rem] lg:h-[36rem]"
       >
         {ready ? (
           <Globe
@@ -189,11 +231,13 @@ export function PortGlobe({
             pathPointLat="lat"
             pathPointLng="lng"
             pathPointAlt="alt"
-            pathColor={() => ["#E8621A", "#38BDF8"]}
-            pathStroke={1.45}
-            pathDashLength={0.016}
-            pathDashGap={0.01}
-            pathDashAnimateTime={3800}
+            pathColor={(d) =>
+              (d as WaterPath).highlight ? ["#E8621A", "#7dd3fc"] : "rgba(148,163,184,0.32)"
+            }
+            pathStroke={(d) => ((d as WaterPath).highlight ? 1.85 : 0.55)}
+            pathDashLength={0.014}
+            pathDashGap={0.009}
+            pathDashAnimateTime={4200}
             rendererConfig={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
             onGlobeReady={() => {
               const controls = globeRef.current?.controls();
@@ -213,9 +257,14 @@ export function PortGlobe({
           <p className="text-label font-semibold uppercase tracking-[0.14em] text-sky-200/80">Sea route</p>
           {laneLabel ? <p className="mt-1 text-small font-semibold text-white">{laneLabel}</p> : null}
           {sea ? (
-            <p className="mt-1 text-small tabular-nums text-brand-orange-soft">
-              ~{sea.km.toLocaleString("en-IN")} km water
-            </p>
+            <>
+              <p className="mt-1 text-small tabular-nums text-brand-orange-soft">
+                ~{sea.km.toLocaleString("en-IN")} km water
+              </p>
+              <p className="mt-1 text-small text-white/70">
+                Orange = selected coastal corridor. Grey = other gates. Not live AIS.
+              </p>
+            </>
           ) : (
             <p className="mt-1 text-small text-white/70">Pick origin and destination</p>
           )}

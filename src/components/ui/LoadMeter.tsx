@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export type LoadLevel = "low" | "medium" | "high";
 
-const FILLED: Record<LoadLevel, number> = { low: 1, medium: 2, high: 3 };
+const FILLED: Record<LoadLevel, number> = { low: 2, medium: 3, high: 5 };
 
 const COLORS: Record<LoadLevel, string> = {
   low: "bg-risk-low",
@@ -26,15 +26,15 @@ export function LoadMeter({ level, className }: LoadMeterProps) {
 
   return (
     <span
-      className={cn("inline-flex items-center gap-1", className)}
+      className={cn("inline-flex items-center gap-0.5", className)}
       role="img"
       aria-label={LABELS[level]}
     >
-      {[0, 1, 2].map((index) => (
+      {[0, 1, 2, 3, 4].map((index) => (
         <span
           key={index}
           className={cn(
-            "h-1 w-4 rounded-full transition-colors",
+            "h-1.5 w-2.5 rounded-sm sm:w-3",
             index < filled ? COLORS[level] : "bg-white/12",
           )}
         />

@@ -29,10 +29,11 @@ const PORT_SERIES = [
 interface Year2526ChartsProps {
   series: readonly CargoMonthPoint[];
   portTotals: readonly PortCargoTotal[];
-  lostRows: readonly SavingsRow[];
+  lost2025: readonly SavingsRow[];
+  lost2026: readonly SavingsRow[];
 }
 
-export function Year2526Charts({ series, portTotals, lostRows }: Year2526ChartsProps) {
+export function Year2526Charts({ series, portTotals, lost2025, lost2026 }: Year2526ChartsProps) {
   const transit = series.map((row) => ({
     label: row.label,
     jnpt: row.byPort.jnpt,
@@ -42,9 +43,24 @@ export function Year2526Charts({ series, portTotals, lostRows }: Year2526ChartsP
     cochin: row.byPort.cochin,
     total: row.total,
   }));
-  const lostData = lostRows
-    .filter((row) => row.savedInr > 0)
-    .map((row) => ({ label: row.label, Lost: row.savedInr }));
+  const lostBy25 = new Map(lost2025.map((row) => [row.portId, row]));
+  const lostBy26 = new Map(lost2026.map((row) => [row.portId, row]));
+  const lostData = [...new Set([...lostBy25.keys(), ...lostBy26.keys()])]
+    .map((portId) => {
+      const a = lostBy25.get(portId);
+      const b = lostBy26.get(portId);
+      return {
+        label: a?.label ?? b?.label ?? portId,
+        "2025": a?.savedInr ?? 0,
+        "2026": b?.savedInr ?? 0,
+      };
+    })
+    .filter((row) => row["2025"] > 0 || row["2026"] > 0)
+    .sort((a, b) => b["2025"] + b["2026"] - (a["2025"] + a["2026"]));
+  const yearLost = [
+    { label: "2025", Lost: lost2025.reduce((sum, row) => sum + row.savedInr, 0) },
+    { label: "2026", Lost: lost2026.reduce((sum, row) => sum + row.savedInr, 0) },
+  ];
 
   return (
     <div className="grid min-w-0 gap-4">
@@ -96,8 +112,32 @@ export function Year2526Charts({ series, portTotals, lostRows }: Year2526ChartsP
       </article>
 
       <article className="min-w-0 rounded-card border border-hairline bg-surface-2 p-3 sm:p-5">
-        <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">Total lost</p>
+        <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">Lost by year</p>
+        <h3 className="mt-1 text-title-3 font-semibold text-ink">2025 vs 2026 — then add to combined</h3>
+        <p className="mt-1 text-small text-ink-4">2025 is Oct–Dec only. 2026 is Jan–Jul.</p>
+        <div className="mt-3 h-40 w-full min-w-0 sm:h-52">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={yearLost} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
+              <CartesianGrid vertical={false} stroke={GRID_STROKE} />
+              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={AXIS_TICK}
+                width={52}
+                tickFormatter={(value: number) => formatINRCompact(value)}
+              />
+              <Tooltip cursor={CURSOR_LINE} content={<ChartTooltip formatValue={formatINR} />} />
+              <Bar dataKey="Lost" fill={CHART_ACCENT} radius={[8, 8, 0, 0]} maxBarSize={72} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </article>
+
+      <article className="min-w-0 rounded-card border border-hairline bg-surface-2 p-3 sm:p-5">
+        <p className="text-label font-semibold uppercase tracking-[0.12em] text-ink-4">Lost by gate</p>
         <h3 className="mt-1 text-title-3 font-semibold text-ink">Wait money vs the cheapest gate</h3>
+        <p className="mt-1 text-small text-ink-4">Split by calendar year of the cargo month.</p>
         <div className="mt-3 h-48 w-full min-w-0 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={lostData} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
@@ -111,7 +151,13 @@ export function Year2526Charts({ series, portTotals, lostRows }: Year2526ChartsP
                 tickFormatter={(value: number) => formatINRCompact(value)}
               />
               <Tooltip cursor={CURSOR_LINE} content={<ChartTooltip formatValue={formatINR} />} />
-              <Bar dataKey="Lost" fill={CHART_ACCENT} radius={[8, 8, 0, 0]} maxBarSize={48} />
+              <Legend
+                wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}
+                iconType="circle"
+                iconSize={8}
+              />
+              <Bar dataKey="2025" fill="#E8621A" radius={[8, 8, 0, 0]} maxBarSize={28} />
+              <Bar dataKey="2026" fill="#f5c16c" radius={[8, 8, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </div>
