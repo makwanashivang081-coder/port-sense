@@ -32,6 +32,15 @@ interface WaterPath {
   highlight: boolean;
 }
 
+function waterPathColor(d: object): string | string[] {
+  const path = d as WaterPath;
+  return path.highlight ? ["#E8621A", "#7dd3fc"] : "rgba(148,163,184,0.32)";
+}
+
+function waterPathStroke(d: object): number {
+  return (d as WaterPath).highlight ? 1.85 : 0.55;
+}
+
 function splitWaterPath(path: readonly LatLng[], highlight: boolean): WaterPath[] {
   const segments: WaterPath[] = [];
   let coords: WaterPath["coords"] = [];
@@ -231,10 +240,8 @@ export function PortGlobe({
             pathPointLat="lat"
             pathPointLng="lng"
             pathPointAlt="alt"
-            pathColor={(d: WaterPath) =>
-              d.highlight ? ["#E8621A", "#7dd3fc"] : "rgba(148,163,184,0.32)"
-            }
-            pathStroke={(d: WaterPath) => (d.highlight ? 1.85 : 0.55)}
+            pathColor={waterPathColor}
+            pathStroke={waterPathStroke}
             pathDashLength={0.014}
             pathDashGap={0.009}
             pathDashAnimateTime={4200}
