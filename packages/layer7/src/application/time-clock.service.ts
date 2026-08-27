@@ -5,6 +5,7 @@ import {
   type ClockSnapshot,
   type DailyDwellRow,
   type DwellBasis,
+  type DwellStat,
   type PortClockReading,
 } from "../domain/types.js";
 import {
@@ -62,25 +63,27 @@ function readingForPort(
   asOfDate: string,
   analog: string,
   jnptHours: number,
-  yearMean: number,
   jnptBasis: DwellBasis,
   jnptNote: string,
+  typicalMeanHours: number | null,
+  dwellStat: DwellStat,
 ): PortClockReading {
   const temps = loadTemperatures();
   const t = temperatureFor(portId, asOfDate);
   if (!t) {
     throw new Error(`No temperature for ${portId} on ${asOfDate}`);
   }
-  const scale = yearMean > 0 ? jnptHours / yearMean : 1;
+  const tail =
+    typicalMeanHours != null && typicalMeanHours > 0 ? jnptHours / typicalMeanHours : 1;
   const baselines = publishedExportHoursFallback();
   const isJnpt = portId === "INNSA";
   const dwellHours = isJnpt
     ? jnptHours
-    : Math.round(baselines[portId] * scale * 100) / 100;
+    : Math.round(baselines[portId] * tail * 100) / 100;
   const dwellBasis: DwellBasis = isJnpt ? jnptBasis : "scaled_from_jnpt_shape";
   const dwellNote = isJnpt
     ? jnptNote
-    : `This port has no 2023 container CSV. Hours = published dwell × (JNPT ${analog} / 2023 year mean).`;
+    : `This port has no 2023 container CSV. Hours = published dwell × (JNPT p90 / JNPT mean that day). Analog ${analog}.`;
 
   return {
     portId,
@@ -89,9 +92,11 @@ function readingForPort(
     temperatureMaxC: t.maxC,
     temperatureSource: temps.source,
     dwellHours,
+    typicalMeanHours: isJnpt ? typicalMeanHours : baselines[portId] ?? null,
+    dwellStat,
     dwellBasis,
     dwellNote,
-    scaleVsJnptYear: Math.round(scale * 1000) / 1000,
+    scaleVsJnptYear: Math.round(tail * 1000) / 1000,
   };
 }
 
@@ -107,29 +112,46 @@ export class TimeClockService {
     let jnptHours: number;
     let jnptBasis: DwellBasis;
     let jnptNote: string;
+    let typicalMeanHours: number | null;
+    let dwellStat: DwellStat;
     let jnptDaily: DailyDwellRow | null = dailyExact ?? dailyAnalog ?? null;
     let monthlyPeriodKey: string | null = null;
     let analogDate: string | null = analog;
 
     if (dailyExact) {
-      jnptHours = dailyExact.meanHours;
+      jnptHours = dailyExact.p90Hours;
+      typicalMeanHours = dailyExact.meanHours;
+      dwellStat = "p90";
       jnptBasis = "jnpt_events_2023";
-      jnptNote = `JNPT mean dwell from ${dailyExact.count} verified 2023 container events on ${asOfDate}.`;
+      jnptNote = `JNPT billed wait = p90 ${dailyExact.p90Hours}h from ${dailyExact.count} verified 2023 events on ${asOfDate} (daily mean ${dailyExact.meanHours}h). Mean is often still inside free time.`;
       analogDate = null;
     } else if (monthly) {
       jnptHours = monthly.hours;
+      typicalMeanHours = monthly.hours;
+      dwellStat = "monthly_ldb";
       jnptBasis = "jnpt_monthly_ldb";
       jnptNote = `JNPT official LDB monthly export dwell for ${monthly.periodKey} (no container-level CSV this month).`;
       monthlyPeriodKey = monthly.periodKey;
       analogDate = analog;
     } else {
-      jnptHours = dailyAnalog?.meanHours ?? yearMean;
+      jnptHours = dailyAnalog?.p90Hours ?? yearMean;
+      typicalMeanHours = dailyAnalog?.meanHours ?? yearMean;
+      dwellStat = dailyAnalog ? "p90" : "mean";
       jnptBasis = "analog_2023_mmdd";
-      jnptNote = `No JNPT events for ${asOfDate}. Using ${analog} 2023 event-day shape (same month-day).`;
+      jnptNote = `No JNPT events for ${asOfDate}. Using ${analog} 2023 p90 wait (same month-day).`;
     }
 
     const ports: PortClockReading[] = TIME_ENGINE_PORTS.map((portId) =>
-      readingForPort(portId, asOfDate, analog, jnptHours, yearMean, jnptBasis, jnptNote),
+      readingForPort(
+        portId,
+        asOfDate,
+        analog,
+        jnptHours,
+        jnptBasis,
+        jnptNote,
+        typicalMeanHours,
+        dwellStat,
+      ),
     );
 
     return {
@@ -140,8 +162,22 @@ export class TimeClockService {
       ports,
       honestyNote:
         "Temperature is Open-Meteo historical 2 m air temperature for that calendar date — not a port sensor. " +
-        "JNPT 2023 dwell is real event averages. Other ports are scaled from that shape. This is not live AIS.",
+        "JNPT billed wait is the day's p90 from verified 2023 events (not invented). Daily mean is shown separately and is often inside free time. Other ports are scaled from that shape. This is not live AIS.",
     };
+  }
+
+  jnptDailyIndex(): ReadonlyArray<{
+    date: string;
+    count: number;
+    meanHours: number;
+    p90Hours: number;
+  }> {
+    return loadDaily2023().days.map((day) => ({
+      date: day.date,
+      count: day.count,
+      meanHours: day.meanHours,
+      p90Hours: day.p90Hours,
+    }));
   }
 
   dwellHoursFor(portId: PortId, rawDate: string): number {

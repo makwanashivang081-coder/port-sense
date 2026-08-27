@@ -4,13 +4,9 @@ export type {
   ExplanationResult,
   OriginExplainInput,
   LaneExplainInput,
-  AdvisorSheetRow,
-  AdvisorResult,
-  AdvisorInput,
 } from "./domain/types.js";
 
 export { ExplanationService } from "./application/explanation.service.js";
-export { AdvisorService } from "./application/advisor.service.js";
 export {
   createExplanationRuntime,
   type ExplanationRuntime,

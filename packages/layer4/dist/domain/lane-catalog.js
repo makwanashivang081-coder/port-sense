@@ -67,8 +67,8 @@ export const LANE_CATALOG = [
         "INVTZ",
         "INCCU",
     ]),
-    // —— Export → USA stub ——
-    ...gatedExport("USGEN", "USA (generic stub)", [
+    // —— Export → Los Angeles (globe pin USLAX / San Pedro; ocean days unknown) ——
+    ...gatedExport("USGEN", "Los Angeles", [
         "INNSA",
         "INMUN",
         "INMAA",

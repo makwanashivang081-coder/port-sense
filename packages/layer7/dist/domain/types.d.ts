@@ -7,6 +7,8 @@ export declare const LIVE_INTERVAL_MINUTES: 10;
 export declare const CALENDAR_MIN: "2023-01-01";
 export declare const CALENDAR_MAX: "2024-12-31";
 export type DwellBasis = "jnpt_events_2023" | "jnpt_monthly_ldb" | "analog_2023_mmdd" | "scaled_from_jnpt_shape";
+/** Billed wait uses p90 of that day's verified events (mean is shown separately). */
+export type DwellStat = "p90" | "mean" | "monthly_ldb";
 export interface DailyDwellRow {
     readonly date: string;
     readonly count: number;
@@ -30,6 +32,8 @@ export interface PortClockReading {
     readonly temperatureMaxC: number;
     readonly temperatureSource: string;
     readonly dwellHours: number;
+    readonly typicalMeanHours: number | null;
+    readonly dwellStat: DwellStat;
     readonly dwellBasis: DwellBasis;
     readonly dwellNote: string;
     readonly scaleVsJnptYear: number;
@@ -58,5 +62,40 @@ export interface LiveFeed {
     readonly observations: readonly LiveObservation[];
     readonly clock: ClockSnapshot;
     readonly agentNote: string;
+}
+/** IPA Daily Vessels Position — snapshot counts, not AIS and not dwell. */
+export interface IpaVesselRow {
+    readonly date: string;
+    readonly ipaName: string;
+    readonly portId: PortId | null;
+    readonly uiPortId: string | null;
+    readonly inProduct: boolean;
+    readonly atBerth: number | null;
+    readonly atAnchorage: number | null;
+    readonly remark: string | null;
+    readonly sourceFile: string | null;
+    readonly note: string;
+    readonly cargo: IpaCargoYtd | null;
+}
+export interface IpaCargoYtd {
+    readonly period: "apr-jul";
+    readonly tonnes2026k: number;
+    readonly tonnes2025k: number;
+    readonly variationPct: number;
+}
+export interface IpaMissingProductPort {
+    readonly portId: PortId;
+    readonly uiPortId: string;
+    readonly reason: string;
+}
+export interface IpaVesselBoard {
+    readonly asOfDate: string;
+    readonly latestDate: string;
+    readonly dates: readonly string[];
+    readonly source: string;
+    readonly sourceUrl: string;
+    readonly rows: readonly IpaVesselRow[];
+    readonly missingProductPorts: readonly IpaMissingProductPort[];
+    readonly honestyNote: string;
 }
 //# sourceMappingURL=types.d.ts.map

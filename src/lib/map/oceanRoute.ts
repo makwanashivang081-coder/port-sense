@@ -48,7 +48,7 @@ export function buildOceanRoute(
     ];
   }
 
-  // USA stub (illustrative via south tip → Malacca → Pacific — not a real schedule)
+  // Los Angeles / San Pedro (illustrative Pacific route — not a sailing schedule)
   if (to.lng < 0) {
     const leaveWest = isWestCoast(from.lng);
     return leaveWest

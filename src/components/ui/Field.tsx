@@ -30,6 +30,7 @@ export function Field({ label, htmlFor, hint, children, className }: FieldProps)
 export interface SelectOption<T extends string> {
   value: T;
   label: string;
+  group?: string;
 }
 
 interface SelectProps<T extends string> {
@@ -47,6 +48,10 @@ export function Select<T extends string>({
   onChange,
   className,
 }: SelectProps<T>) {
+  const groups = options.some((option) => option.group)
+    ? [...new Set(options.map((option) => option.group).filter((g): g is string => Boolean(g)))]
+    : null;
+
   return (
     <div className="relative">
       <select
@@ -55,11 +60,23 @@ export function Select<T extends string>({
         onChange={(event) => onChange(event.target.value as T)}
         className={controlClass(cn("appearance-none pr-10", className))}
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value} className="bg-surface-2 text-ink">
-            {option.label}
-          </option>
-        ))}
+        {groups
+          ? groups.map((group) => (
+              <optgroup key={group} label={group} className="bg-surface-2 text-ink">
+                {options
+                  .filter((option) => option.group === group)
+                  .map((option) => (
+                    <option key={option.value} value={option.value} className="bg-surface-2 text-ink">
+                      {option.label}
+                    </option>
+                  ))}
+              </optgroup>
+            ))
+          : options.map((option) => (
+              <option key={option.value} value={option.value} className="bg-surface-2 text-ink">
+                {option.label}
+              </option>
+            ))}
       </select>
       <ChevronDown
         className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3"

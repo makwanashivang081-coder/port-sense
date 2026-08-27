@@ -34,9 +34,50 @@ interface TempFile {
   ports: Record<string, TemperaturePoint[]>;
 }
 
+interface IpaFile {
+  source: string;
+  sourceUrl: string;
+  kind: string;
+  fetchedAt: string;
+  file?: string;
+  files?: string[];
+  notAis: boolean;
+  notDwellHours: boolean;
+  notDemurrage: boolean;
+  dates: string[];
+  latestDate: string;
+  unpublishedAugust?: string[];
+  missingProductPorts: Array<{
+    portId: PortId;
+    uiPortId: string;
+    reason: string;
+  }>;
+  honestyNote: string;
+  rows: Array<{
+    date: string;
+    ipaName: string;
+    portId: PortId | null;
+    uiPortId: string | null;
+    inProduct: boolean;
+    atBerth: number | null;
+    atAnchorage: number | null;
+    remark: string | null;
+    sourceFile: string | null;
+    note: string;
+  }>;
+  traffic?: Array<{
+    ipaName: string;
+    period: "apr-jul";
+    tonnes2026k: number;
+    tonnes2025k: number;
+    variationPct: number;
+  }>;
+}
+
 let dailyCache: DailyFile | null = null;
 let monthlyCache: MonthlyFile | null = null;
 let tempCache: TempFile | null = null;
+let ipaCache: IpaFile | null = null;
 
 export function loadDaily2023(): DailyFile {
   dailyCache ??= readJsonFile<DailyFile>("data/jnpt-daily-2023.json");
@@ -51,6 +92,11 @@ export function loadMonthlyLdb(): MonthlyFile {
 export function loadTemperatures(): TempFile {
   tempCache ??= readJsonFile<TempFile>("data/port-temperature-2023-2024.json");
   return tempCache;
+}
+
+export function loadIpaVessels(): IpaFile {
+  ipaCache ??= readJsonFile<IpaFile>("data/ipa-daily-vessels.json");
+  return ipaCache;
 }
 
 export function publishedExportHoursFallback(): Readonly<Record<PortId, number>> {

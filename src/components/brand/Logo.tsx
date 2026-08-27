@@ -26,7 +26,7 @@ const RADIUS: Record<LogoSize, string> = {
   hero: "rounded-[1.15rem]",
 };
 
-/** Simple geometric P on an orange tile — reads at 32px. */
+/** Uploaded P-with-ship mark. */
 export function LogoMark({
   className,
   size = "md",
@@ -35,27 +35,20 @@ export function LogoMark({
   size?: LogoSize;
 }) {
   return (
-    <span
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/brand/port-sense-mark.png"
+      alt=""
+      width={72}
+      height={72}
       className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden",
-        "bg-[linear-gradient(155deg,#ff8a4a_0%,#e44d0e_46%,#9e2c06_100%)]",
-        "shadow-[0_8px_20px_-10px_rgba(228,77,14,0.95),inset_0_1px_0_rgba(255,255,255,0.38)]",
+        "shrink-0 bg-surface-1 object-contain",
         RADIUS[size],
         MARK_SIZES[size],
         className,
       )}
       aria-hidden="true"
-    >
-      <svg viewBox="0 0 32 32" fill="none" className="h-[68%] w-[68%]">
-        <path
-          d="M10 7.4h7.1c3.55 0 6.35 2.55 6.35 6.15S20.65 19.7 17.1 19.7H10V7.4Z"
-          stroke="white"
-          strokeWidth="2.6"
-          strokeLinejoin="round"
-        />
-        <path d="M10 7.4V24.6" stroke="white" strokeWidth="2.6" strokeLinecap="round" />
-      </svg>
-    </span>
+    />
   );
 }
 

@@ -15,8 +15,8 @@ export const DATA_PROVENANCE = {
   otherPortsSnapshot: "May 2025",
   /** Carrier D&D tariff notice window in the verified pack */
   tariffWindow: "2023–2026 published notices",
-  /** Series coverage for JNPA monthly dwell */
-  jnpaSeries: "Oct 2024 – Jun 2026",
+  /** IPA Daily Vessels Position coverage */
+  ipaVessels: "IPA published days · 3 Jul–25 Aug 2026 (not every calendar day)",
   /** Home / About paragraph */
   summary:
     "Figures use published baselines — not live AIS. JNPT export dwell is the JNPA LDB month-end for June 2026; other Indian origins use May 2025 published port snapshots. Demurrage slabs come from verified carrier tariff notices (2023–2026).",

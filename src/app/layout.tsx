@@ -39,6 +39,10 @@ export const metadata: Metadata = {
   description:
     "Predict congestion at Indian export ports and convert the delay into rupees before you book. Risk score, port comparison and demurrage exposure for MSME exporters.",
   applicationName: BRAND.name,
+  icons: {
+    icon: "/favicon.png",
+    apple: "/brand/port-sense-mark.png",
+  },
 };
 
 export const viewport: Viewport = {

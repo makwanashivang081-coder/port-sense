@@ -11,6 +11,7 @@ export const TIME_ENGINE_PORTS = [
 let dailyCache = null;
 let monthlyCache = null;
 let tempCache = null;
+let ipaCache = null;
 export function loadDaily2023() {
     dailyCache ??= readJsonFile("data/jnpt-daily-2023.json");
     return dailyCache;
@@ -22,6 +23,10 @@ export function loadMonthlyLdb() {
 export function loadTemperatures() {
     tempCache ??= readJsonFile("data/port-temperature-2023-2024.json");
     return tempCache;
+}
+export function loadIpaVessels() {
+    ipaCache ??= readJsonFile("data/ipa-daily-vessels.json");
+    return ipaCache;
 }
 export function publishedExportHoursFallback() {
     // Latest published snapshots used only to scale non-JNPT ports on a 2023 shape.

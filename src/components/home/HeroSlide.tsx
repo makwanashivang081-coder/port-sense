@@ -9,6 +9,7 @@ import { calculateRisk } from "@/lib/demurrageCalc";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
 import { DATA_PROVENANCE } from "@/lib/data/provenance";
 import { getPortById } from "@/lib/data/ports";
+import { LogoMark } from "@/components/brand/Logo";
 import { BRAND } from "@/lib/brand";
 import { formatDays, formatINR } from "@/lib/utils";
 
@@ -39,6 +40,9 @@ export function HeroSlide() {
         </div>
 
         <div className="relative flex min-h-[24rem] flex-1 flex-col sm:min-h-0">
+          <div className="relative z-20 mb-2 flex justify-center">
+            <LogoMark size="lg" />
+          </div>
           <span
             aria-hidden="true"
             className="hero-wordmark relative z-20 block shrink-0 whitespace-nowrap text-center text-hero"

@@ -1,8 +1,8 @@
 import "server-only";
 
+import { DEMO_CALENDAR_DEFAULT } from "@/lib/data/demoCalendar";
 import {
   createTimeRuntime,
-  analog2023Date,
   type TimeRuntime,
 } from "@port-sense/layer7-time";
 import type { PortId } from "@port-sense/layer2-canonical";
@@ -14,10 +14,8 @@ export function getTimeRuntime(): TimeRuntime {
   return timeRuntime;
 }
 
-export function defaultCalendarDate(now: Date = new Date()): string {
-  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(now.getUTCDate()).padStart(2, "0");
-  return analog2023Date(`2023-${mm}-${dd}`);
+export function defaultCalendarDate(): string {
+  return DEMO_CALENDAR_DEFAULT;
 }
 
 export function parseAsOfDate(raw: unknown): string | undefined {

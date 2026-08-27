@@ -10,8 +10,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/*": [
       "./data/**/*",
-      "./packages/layer2/data/**/*",
       "./packages/layer1/data/**/*",
+      "./packages/layer2/data/**/*",
+      "./packages/layer7/data/**/*",
     ],
   },
   // Prebuilt layer packages (NodeNext ESM) — do not bundle through Turbopack
@@ -21,6 +22,7 @@ const nextConfig: NextConfig = {
     "@port-sense/layer3-decision",
     "@port-sense/layer4-decision",
     "@port-sense/layer5-explanation",
+    "@port-sense/layer7-time",
     "xlsx",
   ],
 };

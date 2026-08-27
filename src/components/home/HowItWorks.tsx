@@ -24,7 +24,7 @@ const STEPS = [
     title: "Act before booking",
     body: "You get a risk band, a port-by-port comparison and one plain instruction — proceed, wait, or reroute.",
     image: "/images/equipment/trucks.jpg",
-    alt: "Container trucks moving cargo inland from a port",
+    alt: "Cargo moving at an Indian container port",
   },
 ] as const;
 

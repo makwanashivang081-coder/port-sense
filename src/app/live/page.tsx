@@ -2,8 +2,9 @@ import { LiveFeedClient } from "@/components/live/LiveFeedClient";
 import { Container } from "@/components/ui/Container";
 
 export const metadata = {
-  title: "Live replay",
-  description: "Simulated live yard samples from 2023 JNPA events + historical temperature",
+  title: "Live board",
+  description:
+    "IPA daily vessels at berth/anchorage plus 2023 JNPA yard replay. Not live AIS.",
 };
 
 export default function LivePage() {
