@@ -49,7 +49,6 @@ interface VesselsPayload {
 
 const PORT_LABEL: Record<string, string> = {
   INNSA: "JNPT",
-  INMUN: "Mundra",
   INMAA: "Chennai",
   INCOK: "Cochin",
   INVTZ: "Vizag",
@@ -196,7 +195,9 @@ export function LiveFeedClient() {
             Same calendar date. JNPT is verified events; others are scaled from that shape.
           </p>
           <ul className="mt-4 space-y-2">
-            {(payload?.clock.ports ?? []).map((p) => (
+            {(payload?.clock.ports ?? [])
+              .filter((p) => p.portId !== "INMUN")
+              .map((p) => (
               <li key={p.portId} className="flex items-baseline justify-between gap-3 border-b border-hairline pb-2 last:border-0">
                 <span className="text-small text-ink">{PORT_LABEL[p.portId] ?? p.portId}</span>
                 <span className="tabular-nums text-body font-semibold text-ink">

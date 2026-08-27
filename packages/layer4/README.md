@@ -2,8 +2,9 @@
 
 Lane Builder → Comparator → Decision Engine.
 
-- **Domestic:** e.g. JNPT → Chennai vs Mundra → Chennai  
-- **Export:** Indian gates → Jebel Ali / USA stub  
+- **Domestic:** modelled Indian gates into each other (JNPT, Chennai, Cochin, Vizag, Kolkata)  
+- **Export:** those gates → Jebel Ali / Los Angeles  
+
 
 Reads **only** Layer 2 via Layer 3 Cost/Risk. Never invents transit (null = insufficient).
 

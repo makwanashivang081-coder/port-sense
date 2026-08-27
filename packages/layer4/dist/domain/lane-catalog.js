@@ -1,80 +1,42 @@
+const MODELLED_GATES = [
+    { id: "INNSA", short: "JNPT" },
+    { id: "INMAA", short: "Chennai" },
+    { id: "INCOK", short: "Cochin" },
+    { id: "INVTZ", short: "Vizag" },
+    { id: "INCCU", short: "Kolkata" },
+];
 /**
  * Fixed V1 lane catalog — domestic IN→IN + export gates.
  * Transit days only when sourced; otherwise null (insufficient).
+ * Mundra (INMUN) is a private port and is not a product origin.
  */
 export const LANE_CATALOG = [
-    // —— Domestic ——
-    {
-        laneId: "dom:INNSA-INMAA",
-        type: "domestic",
-        originPortId: "INNSA",
-        destinationPortId: "INMAA",
-        label: "JNPT → Chennai",
-        transitDays: null,
-        transitSource: null,
-    },
-    {
-        laneId: "dom:INMUN-INMAA",
-        type: "domestic",
-        originPortId: "INMUN",
-        destinationPortId: "INMAA",
-        label: "Mundra → Chennai",
-        transitDays: null,
-        transitSource: null,
-    },
-    {
-        laneId: "dom:INNSA-INCOK",
-        type: "domestic",
-        originPortId: "INNSA",
-        destinationPortId: "INCOK",
-        label: "JNPT → Cochin",
-        transitDays: null,
-        transitSource: null,
-    },
-    {
-        laneId: "dom:INMUN-INNSA",
-        type: "domestic",
-        originPortId: "INMUN",
-        destinationPortId: "INNSA",
-        label: "Mundra → JNPT",
-        transitDays: null,
-        transitSource: null,
-    },
-    {
-        laneId: "dom:INCOK-INVTZ",
-        type: "domestic",
-        originPortId: "INCOK",
-        destinationPortId: "INVTZ",
-        label: "Cochin → Vizag",
-        transitDays: null,
-        transitSource: null,
-    },
-    {
-        laneId: "dom:INMAA-INCCU",
-        type: "domestic",
-        originPortId: "INMAA",
-        destinationPortId: "INCCU",
-        label: "Chennai → Kolkata",
-        transitDays: null,
-        transitSource: null,
-    },
-    // —— Export → Jebel Ali ——
-    ...gatedExport("AEJEA", "Jebel Ali", [
-        "INNSA",
-        "INMUN",
-        "INMAA",
-        "INCOK",
-        "INVTZ",
-        "INCCU",
-    ]),
-    // —— Export → Los Angeles (globe pin USLAX / San Pedro; ocean days unknown) ——
-    ...gatedExport("USGEN", "Los Angeles", [
-        "INNSA",
-        "INMUN",
-        "INMAA",
-        "INCOK",
-    ]),
+    ...domesticMesh(),
+    ...gatedExport("AEJEA", "Jebel Ali", MODELLED_GATES.map((g) => g.id)),
+    ...gatedExport("USGEN", "Los Angeles", MODELLED_GATES.map((g) => g.id)),
+    ...gatedExport("SGSIN", "Singapore", MODELLED_GATES.map((g) => g.id)),
+    ...gatedExport("NLRTM", "Rotterdam", MODELLED_GATES.map((g) => g.id)),
+    ...gatedExport("LKCMB", "Colombo", MODELLED_GATES.map((g) => g.id)),
 ];
+function domesticMesh() {
+    const lanes = [];
+    for (const origin of MODELLED_GATES) {
+        for (const dest of MODELLED_GATES) {
+            if (origin.id === dest.id)
+                continue;
+            lanes.push({
+                laneId: `dom:${origin.id}-${dest.id}`,
+                type: "domestic",
+                originPortId: origin.id,
+                destinationPortId: dest.id,
+                label: `${origin.short} → ${dest.short}`,
+                transitDays: null,
+                transitSource: null,
+            });
+        }
+    }
+    return lanes;
+}
 function gatedExport(code, destLabel, origins) {
     return origins.map((originPortId) => ({
         laneId: `exp:${originPortId}-${code}`,
@@ -89,7 +51,6 @@ function gatedExport(code, destLabel, origins) {
 function portShort(id) {
     const map = {
         INNSA: "JNPT",
-        INMUN: "Mundra",
         INMAA: "Chennai",
         INCOK: "Cochin",
         INVTZ: "Vizag",

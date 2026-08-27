@@ -89,7 +89,7 @@ export function Select<T extends string>({
 interface TextInputProps {
   id: string;
   name?: string;
-  type?: "text" | "email" | "date" | "number";
+  type?: "text" | "email" | "date" | "number" | "tel";
   value?: string;
   onChange?: (value: string) => void;
   placeholder?: string;

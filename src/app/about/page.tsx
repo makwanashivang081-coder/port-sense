@@ -114,7 +114,8 @@ export default function AboutPage() {
             </dl>
             <p className="mt-5 text-small text-ink-3">
               This is not a live AIS feed. Estimates help compare gates before booking; the carrier
-              invoice remains the contract of record.
+              invoice remains the contract of record. Wait-fee calendar: {DATA_PROVENANCE.waitFeeCalendar}{" "}
+              Monthly cargo: {DATA_PROVENANCE.monthlyCargo}.
             </p>
           </div>
 

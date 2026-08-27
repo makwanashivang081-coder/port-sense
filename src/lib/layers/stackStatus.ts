@@ -176,6 +176,13 @@ export function getStackStatus(): {
         : "temperature did not move",
       lastAt: null,
     },
+    {
+      id: "land",
+      name: "Land AI",
+      ready: true,
+      detail: "PTPK slabs · great-circle inland km",
+      lastAt: null,
+    },
   ];
 
   return {

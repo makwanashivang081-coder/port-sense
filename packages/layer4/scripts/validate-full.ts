@@ -34,7 +34,8 @@ function main(): void {
     if (
       lanes.length >= 3 &&
       origins.has("INNSA") &&
-      origins.has("INMUN") &&
+      origins.has("INVTZ") &&
+      !origins.has("INMUN") &&
       lanes.every((l) => l.destinationCode === "AEJEA")
     ) {
       pass("1", "Lane generation → Jebel Ali", `${lanes.length} gates: ${[...origins].join(",")}`);
@@ -44,7 +45,7 @@ function main(): void {
   // Domestic Chennai
   {
     const lanes = builder.buildForDestination({ destinationPortId: "INMAA" });
-    if (lanes.some((l) => l.originPortId === "INNSA") && lanes.some((l) => l.originPortId === "INMUN")) {
+    if (lanes.some((l) => l.originPortId === "INNSA") && lanes.some((l) => l.originPortId === "INVTZ")) {
       pass("1b", "Domestic lanes → Chennai", lanes.map((l) => l.label).join(" | "));
     } else fail("1b", "Domestic lanes → Chennai", lanes.map((l) => l.laneId).join(","));
   }

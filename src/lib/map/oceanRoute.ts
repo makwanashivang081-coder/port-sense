@@ -1,8 +1,6 @@
-/**
- * Illustrative sea-lane polylines (not AIS tracks).
- * Avoids straight chords that cut across the Indian landmass.
- */
-export type LatLng = readonly [number, number];
+import { densifyPath, pathLengthKm, type LatLng } from "@/lib/geo/haversine";
+
+export type { LatLng };
 
 const INDIA_TIP: LatLng = [7.2, 77.6];
 const MALACCA: LatLng = [4.0, 100.0];
@@ -56,6 +54,25 @@ export function buildOceanRoute(
       : [start, [10, from.lng + 2], MALACCA, [15, 150], N_PACIFIC, [32, -130], end];
   }
 
+  // Singapore (illustrative Malacca approach — not a sailing schedule)
+  if (to.lng >= 103 && to.lng <= 105 && to.lat >= 1 && to.lat <= 2) {
+    return isWestCoast(from.lng)
+      ? [start, INDIA_TIP, MALACCA, end]
+      : [start, [10, from.lng + 2], MALACCA, end];
+  }
+
+  // Colombo (illustrative — not a sailing schedule)
+  if (to.lng >= 79.5 && to.lng <= 80.2 && to.lat >= 6.7 && to.lat <= 7.2) {
+    return [start, INDIA_TIP, end];
+  }
+
+  // Rotterdam / North Europe (illustrative Suez sketch — not a sailing schedule)
+  if (to.lat >= 50 && to.lng >= 3 && to.lng <= 6) {
+    return isWestCoast(from.lng)
+      ? [start, [18, 62], [12, 44], [30, 32], [36, 20], [38, 10], [45, 5], end]
+      : [start, INDIA_TIP, [12, 65], [18, 62], [12, 44], [30, 32], [36, 20], [38, 10], [45, 5], end];
+  }
+
   // Domestic India: same coast → stay offshore; opposite coasts → around India tip
   const sameCoast = isWestCoast(from.lng) === isWestCoast(to.lng);
   if (sameCoast) {
@@ -83,4 +100,13 @@ export function buildOceanRoute(
     [to.lat - 1.5, to.lng - 1.2],
     end,
   ];
+}
+
+/** Densified schematic sea lane + path length (not AIS, not air). */
+export function oceanRouteWithKm(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+): { path: LatLng[]; km: number } {
+  const path = densifyPath(buildOceanRoute(from, to), 80);
+  return { path, km: Math.round(pathLengthKm(path)) };
 }

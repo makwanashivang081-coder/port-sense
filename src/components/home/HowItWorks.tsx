@@ -22,7 +22,7 @@ const STEPS = [
   {
     step: "03",
     title: "Act before booking",
-    body: "You get a risk band, a port-by-port comparison and one plain instruction — proceed, wait, or reroute.",
+    body: "You get a risk band, your start gate vs a better gate on demurrage, and one plain instruction. Inland haul is not priced yet.",
     image: "/images/equipment/trucks.jpg",
     alt: "Cargo moving at an Indian container port",
   },
@@ -34,7 +34,7 @@ export function HowItWorks() {
       <SectionHeading
         eyebrow="How it works"
         title="Three steps from port noise to a booking decision"
-        description="No dashboards to learn and no enterprise onboarding — pick a port, pick a date, read the number."
+        description="No dashboards to learn and no enterprise onboarding — pick a start city, pick a destination, read the number."
         action={
           <Button href="/dashboard" variant="outline" size="md" withArrow>
             Open the dashboard

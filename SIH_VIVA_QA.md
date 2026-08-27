@@ -35,12 +35,12 @@ Say the short answer first. Expand only if they ask.
 
 **Q: What can the Dashboard do right now?**  
 **A:**
-1. Choose **Export / Domestic** and **destination** (Dubai, USA, Chennai, etc.)  
-2. Enter **container size, quantity, carrier**  
-3. See **ranked Indian origins**, **best first**  
+1. Choose **Export / Domestic**, a **start city** (e.g. Surat), and **destination** (Jebel Ali, Los Angeles, Singapore, Rotterdam, Colombo, or five Indian dests)  
+2. Enter **container size, quantity, carrier**, and a **wait-fee date** — ranking updates on that step  
+3. See **ranked Indian origins**, **best first**, plus **Land AI** haul advice (inland ₹ pending until rates are filled)  
 4. Open **origin detail** (risk, breakdown)  
-5. Open **map** (ports + straight from→to line)  
-6. APIs report stack health (`/api/health`, `/api/lanes`, `/api/risk`)
+5. Open **globe** (schematic origin → dest, not AIS)  
+6. APIs report stack health (`/api/health`, `/api/lanes`, `/api/risk`, `/api/land`)
 
 **Q: What backends / layers exist?**  
 **A:**
@@ -49,10 +49,12 @@ Say the short answer first. Expand only if they ask.
 - **L3 Cost + Risk + Estimate** — demurrage ₹ + risk  
 - **L4 Lanes** — catalog + rank origins for a destination  
 - **L5 Explanation** — **template** “why” text (not ChatGPT)  
+- **L7 Time** — wait-fee calendar + IPA vessel board  
+- **Land AI** — haul-then-export advice; inland ₹ from fillable rate pack  
 - **port-sense UI** — Next.js app on Vercel  
 
 **Q: What destinations exist?**  
-**A:** Export: **Dubai (Jebel Ali)**, **USA (stub)**. Domestic: Chennai, Cochin, JNPT, Vizag, Kolkata (as “to”). Origins: JNPT, Mundra, Chennai, Cochin, Vizag, Kolkata (as available in catalog).
+**A:** Export (five, same count as domestic): **Jebel Ali, Los Angeles, Singapore, Rotterdam, Colombo**. Domestic: Chennai, Cochin, JNPT, Vizag, Kolkata. Origins ranked: JNPT, Chennai, Cochin, Vizag, Kolkata. **Mundra is not a product origin** (private port). Start cities include **Surat** (nearest modelled gate: JNPT).
 
 **Q: Carriers?**  
 **A:** Maersk, MSC, CMA CGM, Hapag-Lloyd, or “not decided” (defaults to Maersk tariff structure).
@@ -71,7 +73,7 @@ Say the short answer first. Expand only if they ask.
 - Fast **demo URL** for judges (Vercel)
 
 **Q: What value does a user get in 1 minute?**  
-**A:** “For my destination and boxes, Mundra/JNPT/… ranks like this on estimated demurrage — pick the best origin.”
+**A:** “For my destination and boxes, JNPT/Cochin/… ranks like this on estimated demurrage — pick the best origin, or haul to it from your city.”
 
 ---
 
@@ -85,6 +87,8 @@ Say the short answer first. Expand only if they ask.
 - **Full ocean freight (shipping rate) quote** — not our V1  
 - **True ML / deep learning predictor** — not deployed as a neural net  
 - **Layer 5 LLM AI explanations** — pending; we use **templates** now  
+- **Inland road/rail rupees** — structure is ready (`inlandRates.json`); numbers stay pending until you feed quotes  
+- **Day-wise wait-fee for 2025–2026** — not found; official LDB is monthly PDFs. Monthly cargo tonnes are stored separately and not exploded into fake daily dwell  
 - **WhatsApp alerts / threshold notifications** — partial / next  
 - **Login, saved bookings, multi-user accounts** — not V1  
 - **Every Indian port** — only our verified set  

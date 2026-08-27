@@ -4,11 +4,10 @@ import { parseRiskInput } from "@/lib/risk/parseInput";
 import { decideLaneWithLayers } from "@/lib/layers/riskEngine";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
 import { layerPortToUi, uiPortToLayer } from "@/lib/layers/ids";
-
-const EXPORT_CODES = new Set(["AEJEA", "USGEN"]);
+import { isExportDestinationCode } from "@port-sense/layer4-decision";
 
 function parseDestination(raw: unknown):
-  | { destinationCode: "AEJEA" | "USGEN" }
+  | { destinationCode: import("@port-sense/layer4-decision").ExportDestinationCode }
   | { destinationPortId: PortId }
   | null {
   if (!raw || typeof raw !== "object") {
@@ -17,8 +16,8 @@ function parseDestination(raw: unknown):
   const data = raw as Record<string, unknown>;
   const code =
     typeof data.destinationCode === "string" ? data.destinationCode.toUpperCase() : null;
-  if (code && EXPORT_CODES.has(code)) {
-    return { destinationCode: code as "AEJEA" | "USGEN" };
+  if (code && isExportDestinationCode(code)) {
+    return { destinationCode: code };
   }
   if (typeof data.destinationPortId === "string") {
     const layer =
@@ -30,8 +29,8 @@ function parseDestination(raw: unknown):
   if (typeof data.destination === "string") {
     const d = data.destination.trim();
     const upper = d.toUpperCase();
-    if (EXPORT_CODES.has(upper)) {
-      return { destinationCode: upper as "AEJEA" | "USGEN" };
+    if (isExportDestinationCode(upper)) {
+      return { destinationCode: upper };
     }
     if (/^IN[A-Z]{3}$/.test(upper)) {
       return { destinationPortId: upper as PortId };
@@ -129,6 +128,8 @@ export async function GET(request: Request) {
     destination: url.searchParams.get("destination"),
     destinationCode: url.searchParams.get("destinationCode"),
     destinationPortId: url.searchParams.get("destinationPortId"),
+    shipDate: url.searchParams.get("shipDate"),
+    asOfDate: url.searchParams.get("asOfDate"),
   });
 }
 

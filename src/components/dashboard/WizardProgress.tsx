@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 const STEPS = [
-  { id: 1, label: "Where to" },
+  { id: 1, label: "From / to" },
   { id: 2, label: "Cargo" },
   { id: 3, label: "Best ports" },
 ] as const;

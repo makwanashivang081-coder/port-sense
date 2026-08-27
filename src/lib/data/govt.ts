@@ -2,13 +2,12 @@
 export const GOVT_INSIGHTS = {
   totalEstimatedLossINR: 284000000,
   highRiskPorts: 2,
-  portsTracked: 6,
+  portsTracked: 5,
   peakSeason: "Oct–Dec (festival export surge)",
   portLossRanking: [
     { port: "JNPT (Nhava Sheva)", lossINR: 98000000, share: 34.5 },
     { port: "Chennai", lossINR: 62000000, share: 21.8 },
     { port: "Kolkata", lossINR: 41000000, share: 14.4 },
-    { port: "Mundra", lossINR: 28000000, share: 9.9 },
     { port: "Visakhapatnam", lossINR: 32000000, share: 11.3 },
   ],
   seasonalIndex: [

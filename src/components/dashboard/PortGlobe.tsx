@@ -5,6 +5,8 @@ import Globe, { type GlobeMethods } from "react-globe.gl";
 import type { Port, RiskLevel } from "@/types";
 import type { MapDestinationPoint } from "@/lib/data/destinations";
 import { formatINR } from "@/lib/utils";
+import { portShortLabel } from "@/lib/data/portLabels";
+import { oceanRouteWithKm } from "@/lib/map/oceanRoute";
 
 const RISK_COLOR: Record<RiskLevel, string> = {
   low: "#22C55E",
@@ -15,16 +17,6 @@ const RISK_COLOR: Record<RiskLevel, string> = {
 const EARTH = "https://cdn.jsdelivr.net/npm/three-globe@2.31.1/example/img/earth-blue-marble.jpg";
 const BUMP = "https://cdn.jsdelivr.net/npm/three-globe@2.31.1/example/img/earth-topology.png";
 const SKY = "https://cdn.jsdelivr.net/npm/three-globe@2.31.1/example/img/night-sky.png";
-
-function shortPortName(port: Port): string {
-  if (port.id === "jnpt") return "JNPT";
-  if (port.id === "mundra") return "Mundra";
-  if (port.id === "chennai") return "Chennai";
-  if (port.id === "cochin") return "Cochin";
-  if (port.id === "vizag") return "Vizag";
-  if (port.id === "kolkata") return "Kolkata";
-  return port.name;
-}
 
 interface GlobePoint {
   lat: number;
@@ -37,11 +29,8 @@ interface GlobePoint {
   cost?: number;
 }
 
-interface GlobeArc {
-  startLat: number;
-  startLng: number;
-  endLat: number;
-  endLng: number;
+interface WaterPath {
+  coords: Array<{ lat: number; lng: number; alt: number }>;
 }
 
 interface PortGlobeProps {
@@ -80,11 +69,16 @@ export function PortGlobe({
     [ports, selectedPortId],
   );
 
+  const sea = useMemo(() => {
+    if (!selected || !destination) return null;
+    return oceanRouteWithKm(selected, destination);
+  }, [selected, destination]);
+
   const points = useMemo<GlobePoint[]>(() => {
     const originPoints: GlobePoint[] = ports.map((port) => ({
       lat: port.lat,
       lng: port.lng,
-      name: shortPortName(port),
+      name: portShortLabel(port.id, port.name),
       color: port.id === selectedPortId ? "#E8621A" : RISK_COLOR[port.riskLevel],
       kind: "origin",
       portId: port.id,
@@ -105,22 +99,21 @@ export function PortGlobe({
     ];
   }, [ports, selectedPortId, destination, costByPortId]);
 
-  const arcs = useMemo<GlobeArc[]>(() => {
-    if (!selected || !destination) return [];
+  const paths = useMemo<WaterPath[]>(() => {
+    if (!sea) return [];
     return [
       {
-        startLat: selected.lat,
-        startLng: selected.lng,
-        endLat: destination.lat,
-        endLng: destination.lng,
+        coords: sea.path.map(([lat, lng]) => ({ lat, lng, alt: 0.004 })),
       },
     ];
-  }, [selected, destination]);
+  }, [sea]);
 
   useEffect(() => {
     const midLat = destination ? (selected ? (selected.lat + destination.lat) / 2 : destination.lat) : 18;
     const midLng = destination ? (selected ? (selected.lng + destination.lng) / 2 : destination.lng) : 78;
-    const far = destination != null && Math.abs(destination.lng) > 100;
+    const far =
+      destination != null &&
+      (Math.abs(destination.lng) > 100 || destination.lat > 45 || destination.lng < 40);
     globeRef.current?.pointOfView({ lat: midLat, lng: midLng, altitude: far ? 2.8 : 2.15 }, 900);
   }, [selected, destination]);
 
@@ -164,25 +157,29 @@ export function PortGlobe({
           labelColor={() => "rgba(248,250,252,0.9)"}
           labelAltitude={0.025}
           labelResolution={2}
-          arcsData={arcs}
-          arcStartLat="startLat"
-          arcStartLng="startLng"
-          arcEndLat="endLat"
-          arcEndLng="endLng"
-          arcColor={() => ["#E8621A", "#38BDF8"]}
-          arcStroke={0.7}
-          arcAltitude={0.22}
-          arcDashLength={0.45}
-          arcDashGap={0.18}
-          arcDashAnimateTime={2800}
+          pathsData={paths}
+          pathPoints="coords"
+          pathPointLat="lat"
+          pathPointLng="lng"
+          pathPointAlt="alt"
+          pathColor={() => ["#E8621A", "#38BDF8"]}
+          pathStroke={1.35}
+          pathDashLength={0.018}
+          pathDashGap={0.01}
+          pathDashAnimateTime={4200}
           rendererConfig={{ antialias: true, alpha: true }}
         />
-        <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[16rem] rounded-panel border border-white/10 bg-black/45 px-3.5 py-3 backdrop-blur-md">
+        <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[17rem] rounded-panel border border-white/10 bg-black/45 px-3.5 py-3 backdrop-blur-md">
           <p className="text-label font-semibold uppercase tracking-[0.14em] text-sky-200/80">Globe</p>
-          <p className="mt-1 text-small font-semibold text-white">Indian origins in orbit</p>
+          <p className="mt-1 text-small font-semibold text-white">Sea lane (not air)</p>
           {laneLabel ? <p className="mt-1 text-small text-white/70">{laneLabel}</p> : null}
+          {sea ? (
+            <p className="mt-1 text-small tabular-nums text-brand-orange-soft">
+              ~{sea.km.toLocaleString("en-IN")} km water path
+            </p>
+          ) : null}
           <p className="mt-2 text-label text-white/50">
-            Orange arc = selected from→to (schematic, not AIS).
+            Orange track hugs the sea. Schematic — not AIS, not a great-circle flight.
           </p>
         </div>
       </div>

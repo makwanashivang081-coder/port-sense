@@ -1,13 +1,16 @@
 import type { PortId } from "@port-sense/layer2-canonical";
 export type LaneType = "domestic" | "export";
-export type DestinationCode = "AEJEA" | "USGEN" | PortId;
+export declare const EXPORT_DESTINATION_CODES: readonly ["AEJEA", "USGEN", "SGSIN", "NLRTM", "LKCMB"];
+export type ExportDestinationCode = (typeof EXPORT_DESTINATION_CODES)[number];
+export type DestinationCode = ExportDestinationCode | PortId;
+export declare function isExportDestinationCode(value: string): value is ExportDestinationCode;
 export interface LaneDefinition {
     readonly laneId: string;
     readonly type: LaneType;
     readonly originPortId: PortId;
     /** Domestic: Indian port. Export: use destinationCode. */
     readonly destinationPortId?: PortId;
-    readonly destinationCode?: Exclude<DestinationCode, PortId>;
+    readonly destinationCode?: ExportDestinationCode;
     readonly label: string;
     /** null = insufficient sourced transit — never invent */
     readonly transitDays: number | null;

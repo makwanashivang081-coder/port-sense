@@ -19,7 +19,7 @@ export class LaneBuilderEngine {
    */
   buildForDestination(dest: {
     destinationPortId?: PortId;
-    destinationCode?: "AEJEA" | "USGEN";
+    destinationCode?: import("../domain/types.js").ExportDestinationCode;
   }): LaneDefinition[] {
     if (dest.destinationPortId && dest.destinationCode) {
       throw new LaneDecisionError("Provide either destinationPortId or destinationCode, not both");

@@ -12,7 +12,7 @@ export declare class DecisionEngine {
     constructor(builder: LaneBuilderEngine, comparator: LaneComparatorEngine);
     decideForDestination(dest: {
         destinationPortId?: PortId;
-        destinationCode?: "AEJEA" | "USGEN";
+        destinationCode?: import("../domain/types.js").ExportDestinationCode;
     }, req: LaneEvaluateRequest): LaneDecisionResult;
     private compareByPriority;
 }

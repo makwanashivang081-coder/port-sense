@@ -53,7 +53,8 @@ export class DecisionEngine {
             saveInrVsRunnerUp,
             recommendation,
             honestyNote: "Demurrage from published carrier tariffs (2023–2024 notices) + Port Sense dwell model on historical port dwell. " +
-                "Sea transit blank = no sourced sailing time. ₹0 can be the best lane when dwell fits free time.",
+                "Sea transit blank = no sourced sailing time. ₹0 can be the best lane when dwell fits free time. " +
+                "Export destination is a catalog label — it does not change Indian-origin wait-fee in this model.",
             evaluatedAt: new Date().toISOString(),
         };
     }

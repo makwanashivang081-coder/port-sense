@@ -23,7 +23,7 @@ export function ProofSlide() {
         className="relative flex h-full min-h-0 flex-col justify-center pt-24 pb-10"
       >
         <h2 className="max-w-xl font-semibold text-title-1 text-ink sm:text-display-2">
-          Extra dwell, six ports.
+          Extra dwell, five gates.
         </h2>
         <p className="mt-3 max-w-xl text-body text-ink-3">
           Illustrative home sample. Product dashboard uses {DATA_PROVENANCE.jnptDwellMonth} JNPA LDB

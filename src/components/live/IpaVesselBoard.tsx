@@ -46,7 +46,6 @@ const PRODUCT_LABEL: Record<string, string> = {
   INCOK: "Cochin",
   INVTZ: "Vizag",
   INCCU: "Kolkata docks",
-  INMUN: "Mundra",
 };
 
 function formatCount(value: number | null): string {
@@ -95,6 +94,9 @@ export function IpaVesselBoard({
 
   const productRows = board.rows.filter((row) => row.inProduct);
   const otherRows = board.rows.filter((row) => !row.inProduct);
+  const missingRows = board.missingProductPorts.filter(
+    (missing) => missing.portId !== "INMUN" && missing.uiPortId !== "mundra",
+  );
 
   return (
     <Card tone="accent" padding="md" className="space-y-5">
@@ -171,7 +173,7 @@ export function IpaVesselBoard({
             </article>
           );
         })}
-        {board.missingProductPorts.map((missing) => (
+        {missingRows.map((missing) => (
           <article
             key={missing.portId}
             className="rounded-panel border border-dashed border-hairline bg-surface-0/25 px-4 py-3"

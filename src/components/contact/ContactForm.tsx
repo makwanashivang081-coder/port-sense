@@ -50,6 +50,22 @@ export function ContactForm() {
             placeholder="you@company.in"
           />
         </Field>
+        <Field label="Phone" htmlFor="contact-phone" hint="Optional">
+          <TextInput
+            id="contact-phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="+91"
+          />
+        </Field>
+        <Field label="Subject" htmlFor="contact-subject" hint="Optional">
+          <TextInput
+            id="contact-subject"
+            name="subject"
+            placeholder="Start city, destination, or partnership"
+          />
+        </Field>
       </div>
       <Field label="Organisation" htmlFor="contact-org" hint="Optional">
         <TextInput

@@ -9,12 +9,12 @@ import { getPortById } from "@/lib/data/ports";
 import { formatDays, formatINR, cn } from "@/lib/utils";
 import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
-const FEATURED = ["jnpt", "chennai", "mundra"] as const;
+const FEATURED = ["jnpt", "chennai", "vizag"] as const;
 
 const LINES = [
   "The invoice arrives after the margin is gone.",
   "Enterprise visibility is priced for giants.",
-  "JNPT can be jammed while Mundra is clear.",
+  "Your nearest gate is not always the cheapest wait.",
 ] as const;
 
 export function ProblemSlide() {

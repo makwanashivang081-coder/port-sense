@@ -5,28 +5,37 @@ import { BRAND } from "@/lib/brand";
 import { PORTS } from "@/lib/data/ports";
 import { DATA_PROVENANCE } from "@/lib/data/provenance";
 
-const COLUMNS = [
-  {
-    title: "Product",
-    links: [
-      { href: "/dashboard", label: "Risk dashboard" },
-      { href: "/services", label: "Services" },
-      { href: "/dashboard", label: "Port comparison" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { href: "/about", label: "About us" },
-      { href: "/contact", label: "Contact" },
-    ],
-  },
+const PRODUCT = [
+  { href: "/dashboard", label: "Compare ports" },
+  { href: "/live", label: "Live board" },
+  { href: "/services", label: "Services" },
+] as const;
+
+const COMPANY = [
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+  { href: "/dashboard", label: "Start location" },
 ] as const;
 
 export function Footer() {
   return (
     <footer className="relative mt-auto overflow-hidden border-t border-hairline bg-surface-0">
       <Container width="wide">
+        <div className="grid items-center gap-6 border-b border-hairline py-10 lg:grid-cols-[1.2fr_1fr]">
+          <div>
+            <p className="text-title-2 font-semibold text-ink">Questions about a lane?</p>
+            <p className="mt-2 text-body text-ink-3">
+              This is an SIH demo — there is no mailing list. Write to the team from Contact.
+            </p>
+          </div>
+          <Link
+            href="/contact"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-brand-orange px-6 text-body font-semibold text-white hover:bg-brand-orange-soft lg:justify-self-end"
+          >
+            Write to us
+          </Link>
+        </div>
+
         <div className="grid gap-12 py-16 lg:grid-cols-[1.4fr_1fr_1fr_1.1fr] lg:gap-10">
           <div className="max-w-sm">
             <Logo size="md" />
@@ -36,26 +45,34 @@ export function Footer() {
             </p>
           </div>
 
-          {COLUMNS.map((column) => (
-            <div key={column.title}>
-              <h3 className="text-label font-semibold uppercase text-ink-4">{column.title}</h3>
-              <ul className="mt-5 flex flex-col gap-3">
-                {column.links.map((link) => (
-                  <li key={`${column.title}-${link.label}`}>
-                    <Link
-                      href={link.href}
-                      className="text-body text-ink-2 transition-colors hover:text-ink"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div>
+            <h3 className="text-label font-semibold uppercase text-ink-4">Product</h3>
+            <ul className="mt-5 flex flex-col gap-3">
+              {PRODUCT.map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-body text-ink-2 transition-colors hover:text-ink">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           <div>
-            <h3 className="text-label font-semibold uppercase text-ink-4">Ports tracked</h3>
+            <h3 className="text-label font-semibold uppercase text-ink-4">Useful links</h3>
+            <ul className="mt-5 flex flex-col gap-3">
+              {COMPANY.map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-body text-ink-2 transition-colors hover:text-ink">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-label font-semibold uppercase text-ink-4">Gates we model</h3>
             <ul className="mt-5 flex flex-wrap gap-2">
               {PORTS.map((port) => (
                 <li
@@ -68,6 +85,7 @@ export function Footer() {
             </ul>
             <p className="mt-5 text-small text-ink-4">
               Estimates only — actual charges depend on the carrier invoice and your contract.
+              Private ports are not ranked.
             </p>
           </div>
         </div>

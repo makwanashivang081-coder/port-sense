@@ -2,6 +2,7 @@ import "server-only";
 
 import type { DecisionResult, DwellEstimateSnapshot } from "@port-sense/layer3-decision";
 import type { PortId } from "@port-sense/layer2-canonical";
+import type { ExportDestinationCode } from "@port-sense/layer4-decision";
 import type { ExplanationResult } from "@port-sense/layer5-explanation";
 import { getPortById, PORTS } from "@/lib/data/ports";
 import type { RiskInput, RiskResult } from "@/types";
@@ -12,7 +13,7 @@ import {
   getExplanationRuntime,
   getLaneRuntime,
 } from "@/lib/layers/runtime";
-import { dwellHoursByPort } from "@/lib/layers/timeClock";
+import { dwellHoursByPort, parseAsOfDate } from "@/lib/layers/timeClock";
 import { layerPortToUi, uiCarrierToLayer, uiPortToLayer } from "@/lib/layers/ids";
 
 export type LayerRiskMath = RiskMath;
@@ -247,11 +248,18 @@ export function comparePortsWithLayers(
 
 export function decideLaneWithLayers(
   input: Omit<RiskInput, "portId">,
-  destination: { destinationCode: "AEJEA" | "USGEN" } | { destinationPortId: PortId },
+  destination: { destinationCode: ExportDestinationCode } | { destinationPortId: PortId },
 ) {
   const { decision } = getLaneRuntime();
-  const dwellByPort =
-    input.asOfDate !== undefined ? dwellHoursByPort(input.asOfDate) : undefined;
+  const asOf = input.asOfDate !== undefined ? parseAsOfDate(input.asOfDate) : undefined;
+  let dwellByPort: ReturnType<typeof dwellHoursByPort> | undefined;
+  if (asOf !== undefined) {
+    try {
+      dwellByPort = dwellHoursByPort(asOf);
+    } catch {
+      dwellByPort = undefined;
+    }
+  }
   const lane = decision.decideForDestination(destination, {
     carrierId: uiCarrierToLayer(input.carrierId),
     containerSize: input.containerType,

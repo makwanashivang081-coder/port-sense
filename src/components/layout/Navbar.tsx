@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/live", label: "Live" },
+  { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ] as const;
@@ -78,7 +79,7 @@ export function Navbar() {
               href="/dashboard"
               className="group inline-flex h-11 items-center gap-2 rounded-full bg-brand-orange pl-5 pr-2 text-small font-semibold text-white transition-colors duration-300 hover:bg-brand-orange-soft"
             >
-              Dashboard
+              Compare ports
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 transition-transform duration-300 ease-[var(--ease-out-quint)] group-hover:rotate-45">
                 <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
@@ -133,7 +134,7 @@ export function Navbar() {
               onClick={() => setOpen(false)}
               className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-orange text-body font-semibold text-white"
             >
-              Dashboard
+              Compare ports
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </nav>

@@ -20,26 +20,6 @@
     }
   },
   {
-    "id": "mundra",
-    "name": "Mundra",
-    "code": "INMUN",
-    "state": "Gujarat",
-    "lat": 22.8395,
-    "lng": 69.7213,
-    "avgDwellDays": 0.8,
-    "vesselsQueued": 3,
-    "congestionScore": 22,
-    "trend": [28, 26, 24, 23, 22, 21, 22],
-    "equipmentLoad": {
-      "sts": "normal",
-      "rtg": "normal",
-      "reachStacker": "normal",
-      "yard": "normal",
-      "shed": "normal",
-      "trucks": "normal"
-    }
-  },
-  {
     "id": "chennai",
     "name": "Chennai",
     "code": "INMAA",

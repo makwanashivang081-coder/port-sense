@@ -8,7 +8,7 @@ const STEPS = [
   {
     step: "01",
     title: "Sense congestion",
-    body: `Queues and published dwell (JNPT ${DATA_PROVENANCE.jnptDwellMonth}; other ports ${DATA_PROVENANCE.otherPortsSnapshot}) collapse into one score per Indian export gate.`,
+    body: `Start from your city. Queues and published dwell (JNPT ${DATA_PROVENANCE.jnptDwellMonth}; other ports ${DATA_PROVENANCE.otherPortsSnapshot}) collapse into one score per Indian export gate.`,
     image: "/images/hero/gantry.jpg",
     alt: "Container vessel with an orange hull at golden hour",
   },
@@ -22,7 +22,7 @@ const STEPS = [
   {
     step: "03",
     title: "Act before booking",
-    body: "Proceed, wait, or reroute — one line of English, with the source month behind every figure. Not live AIS.",
+    body: "If Vizag is nearest but JNPT wins on demurrage, we say so. Inland haul is not priced yet. Not live AIS.",
     image: "/images/hero/container-yard.jpg",
     alt: "Aerial of a vessel being worked at a geometric container terminal",
   },

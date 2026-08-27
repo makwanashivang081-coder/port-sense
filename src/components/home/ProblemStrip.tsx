@@ -19,7 +19,7 @@ const PROBLEMS = [
   {
     icon: Ship,
     title: "Ports change daily",
-    body: "Congestion at JNPT today may be clear at Mundra — timing and routing decide your margin.",
+    body: "Congestion at JNPT today may be clearer at Cochin or Vizag — timing and routing decide your margin.",
   },
 ] as const;
 

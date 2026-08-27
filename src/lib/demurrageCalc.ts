@@ -73,7 +73,7 @@ export function calculateRisk(raw: RiskInput): RiskResult | null {
 
   const variance = port.riskLevel === "high" ? 0.25 : port.riskLevel === "medium" ? 0.15 : 0.08;
 
-  const bestAlt = ["mundra", "cochin", "vizag"].find((id) => {
+  const bestAlt = ["cochin", "vizag", "jnpt"].find((id) => {
     const candidate = getPortById(id);
     return candidate && candidate.congestionScore < port.congestionScore - 15;
   });

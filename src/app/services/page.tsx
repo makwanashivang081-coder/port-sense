@@ -33,7 +33,7 @@ const SERVICES = [
   {
     icon: GitCompare,
     title: "Port compare",
-    body: "Six Indian gateways ranked on the same shipment — cheapest first.",
+    body: "Five Indian gateways ranked on the same shipment — cheapest wait first. Start city vs better gate.",
     status: "Live",
     image: "/images/sections/crane-horses.jpg",
     alt: "Orange terminal equipment against navy container stacks",

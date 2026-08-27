@@ -2,7 +2,9 @@
 
 import { ArrowRight, MapPin } from "lucide-react";
 import { cn, formatINR } from "@/lib/utils";
+import { portShortLabel } from "@/lib/data/portLabels";
 import type { LaneRowView } from "@/components/dashboard/LaneCompareTable";
+import { BetterGateCard } from "@/components/dashboard/BetterGateCard";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { Button } from "@/components/ui/Button";
 
@@ -12,6 +14,8 @@ interface LaneResultCardsProps {
   destinationLabel: string;
   recommendation: string | null;
   saveInr: number | null;
+  preferredPortId?: string | null;
+  startLabel?: string | null;
   onSelectLane: (row: LaneRowView) => void;
   onOpenMap: () => void;
 }
@@ -22,6 +26,8 @@ export function LaneResultCards({
   destinationLabel,
   recommendation,
   saveInr,
+  preferredPortId,
+  startLabel,
   onSelectLane,
   onOpenMap,
 }: LaneResultCardsProps) {
@@ -32,6 +38,14 @@ export function LaneResultCards({
 
   return (
     <div className="space-y-4">
+      {preferredPortId && startLabel ? (
+        <BetterGateCard
+          rows={rows}
+          preferredPortId={preferredPortId}
+          startLabel={startLabel}
+          destinationLabel={destinationLabel}
+        />
+      ) : null}
       {best ? (
         <article className="overflow-hidden rounded-card border border-brand-orange/40 bg-gradient-to-b from-brand-orange/15 to-surface-2 shadow-lift">
           <div className="flex items-center justify-between gap-3 border-b border-brand-orange/20 px-4 py-3 sm:px-5">
@@ -49,7 +63,7 @@ export function LaneResultCards({
               </h3>
               <p className="mt-1 flex items-center gap-1.5 text-small text-ink-3">
                 <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                Ship from India → {destinationLabel}
+                {portShortLabel(best.originPortId)} → {destinationLabel}
               </p>
             </div>
             <div className="flex flex-wrap items-end justify-between gap-3">

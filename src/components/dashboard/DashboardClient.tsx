@@ -2,8 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, MapPin, RotateCcw, Route } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, RotateCcw, Route } from "lucide-react";
 import { PORTS } from "@/lib/data/ports";
+import { portShortLabel } from "@/lib/data/portLabels";
+import {
+  DEFAULT_START_LOCATION_ID,
+  getStartLocation,
+  START_LOCATIONS,
+} from "@/lib/data/startLocations";
 import {
   DEMO_CALENDAR_DEFAULT,
   EXPORT_FREE_DAYS,
@@ -11,6 +17,7 @@ import {
 import { SAMPLE_INPUT } from "@/lib/data/sample";
 import {
   defaultDestination,
+  destinationChipCode,
   destinationsForMode,
   resolveMapDestination,
   type LaneMode,
@@ -33,7 +40,16 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { WaitFeeCalendar } from "@/components/dashboard/WaitFeeCalendar";
+import { RouteStrip } from "@/components/dashboard/RouteStrip";
 import { IpaVesselBoard, type IpaBoardView } from "@/components/live/IpaVesselBoard";
+import { LiveLanePreview } from "@/components/dashboard/LiveLanePreview";
+import { LandAdviceCard } from "@/components/dashboard/LandAdviceCard";
+import { MonthlyCargoNote } from "@/components/dashboard/MonthlyCargoNote";
+import { ExplanationCard } from "@/components/dashboard/ExplanationCard";
+import { adviseLandHaul } from "@/lib/land/landAdvice.service";
+import { quoteCityToPort } from "@/lib/land/cargoCost.service";
+import { oceanRouteWithKm } from "@/lib/map/oceanRoute";
+import { CargoHaulCard } from "@/components/dashboard/CargoHaulCard";
 
 const PortGlobe = dynamic(
   () => import("@/components/dashboard/PortGlobe").then((m) => m.PortGlobe),
@@ -45,6 +61,18 @@ const PortGlobe = dynamic(
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-orange" aria-hidden="true" />
           Loading globe…
         </span>
+      </div>
+    ),
+  },
+);
+
+const PortMap = dynamic(
+  () => import("@/components/dashboard/PortMap").then((m) => m.PortMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center rounded-card border border-hairline bg-surface-2 sm:h-[28rem]">
+        <span className="text-label font-semibold uppercase text-ink-4">Loading map…</span>
       </div>
     ),
   },
@@ -72,7 +100,7 @@ const MODE_TABS = [
 const RESULT_TABS = [
   { id: "results", label: "Best ports" },
   { id: "origin", label: "Detail" },
-  { id: "map", label: "Globe" },
+  { id: "map", label: "Globe + map" },
 ] as const;
 
 type WizardStep = 1 | 2 | 3;
@@ -115,6 +143,18 @@ interface LanesApiOk {
     status: "ok" | "insufficient_data";
     citation: string;
   }>;
+  explanation?: {
+    title: string;
+    summary: string;
+    bullets: Array<{
+      label: string;
+      text: string;
+      factId?: string;
+      citation?: string;
+    }>;
+    honestyNote: string;
+    engine: string;
+  };
 }
 
 interface RiskApiOk {
@@ -169,6 +209,7 @@ function toLaneRows(data: LanesApiOk): LaneRowView[] {
 export function DashboardClient() {
   const [step, setStep] = useState<WizardStep>(1);
   const [laneMode, setLaneMode] = useState<LaneMode>("export");
+  const [startLocationId, setStartLocationId] = useState(DEFAULT_START_LOCATION_ID);
   const [destinationId, setDestinationId] = useState(defaultDestination("export").id);
   const [containerType, setContainerType] = useState<ContainerType>(SAMPLE_INPUT.containerType);
   const [carrierId, setCarrierId] = useState<CarrierId>("hapag");
@@ -178,6 +219,9 @@ export function DashboardClient() {
   const [laneRows, setLaneRows] = useState<LaneRowView[]>([]);
   const [laneRec, setLaneRec] = useState<string | null>(null);
   const [saveInr, setSaveInr] = useState<number | null>(null);
+  const [laneExplanation, setLaneExplanation] = useState<LanesApiOk["explanation"] | null>(
+    null,
+  );
   const [selectedLaneId, setSelectedLaneId] = useState<string | null>(null);
   const [portId, setPortId] = useState(SAMPLE_INPUT.portId);
 
@@ -190,6 +234,8 @@ export function DashboardClient() {
   const [asOfDate, setAsOfDate] = useState(DEMO_CALENDAR_DEFAULT);
   const [ipaBoard, setIpaBoard] = useState<IpaBoardView | null>(null);
   const [ipaDate, setIpaDate] = useState<string | null>(null);
+
+  const startLocation = useMemo(() => getStartLocation(startLocationId), [startLocationId]);
 
   const activeDestination = useMemo(() => {
     return (
@@ -206,21 +252,7 @@ export function DashboardClient() {
   const mapLaneLabel = useMemo(() => {
     const origin = PORTS.find((p) => p.id === portId);
     if (!origin || !mapDestination) return null;
-    const short =
-      origin.id === "jnpt"
-        ? "JNPT"
-        : origin.id === "mundra"
-          ? "Mundra"
-          : origin.id === "chennai"
-            ? "Chennai"
-            : origin.id === "cochin"
-              ? "Cochin"
-              : origin.id === "vizag"
-                ? "Vizag"
-                : origin.id === "kolkata"
-                  ? "Kolkata"
-                  : origin.name;
-    return `${short} → ${mapDestination.label}`;
+    return `${portShortLabel(origin.id, origin.name)} → ${mapDestination.label}`;
   }, [portId, mapDestination]);
 
   const cargo = useMemo(
@@ -261,9 +293,9 @@ export function DashboardClient() {
     };
   }, [ipaDate]);
 
-  // Fetch ranked lanes only when on results step
+  // Fetch ranked lanes as soon as cargo + date are on screen (step 2+), not only results
   useEffect(() => {
-    if (step !== 3) return;
+    if (step < 2) return;
     let cancelled = false;
     setLanesLoading(true);
     setError(null);
@@ -284,6 +316,7 @@ export function DashboardClient() {
         setLaneRows(rows);
         setLaneRec(data.recommendation);
         setSaveInr(data.saveInrVsRunnerUp);
+        setLaneExplanation(data.explanation ?? null);
         const pick = rows.find((r) => r.status === "ok") ?? null;
         if (pick) {
           setSelectedLaneId(pick.laneId);
@@ -296,6 +329,8 @@ export function DashboardClient() {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Failed to load lanes");
           setLaneRows([]);
+          setLaneExplanation(null);
+          setLaneExplanation(null);
         }
       })
       .finally(() => {
@@ -355,19 +390,25 @@ export function DashboardClient() {
   const resetDemo = () => {
     setStep(1);
     setLaneMode("export");
+    setStartLocationId(DEFAULT_START_LOCATION_ID);
     setDestinationId("AEJEA");
     setContainerType("40ft");
     setCarrierId("hapag");
     setContainerCount(8);
     setResultView("results");
     setLaneRows([]);
+    setLaneExplanation(null);
     setError(null);
     setAsOfDate(DEMO_CALENDAR_DEFAULT);
   };
 
-  const onSelectLane = (row: LaneRowView) => {
+  const onHighlightLane = (row: LaneRowView) => {
     setSelectedLaneId(row.laneId);
     setPortId(row.originPortId);
+  };
+
+  const onSelectLane = (row: LaneRowView) => {
+    onHighlightLane(row);
     setResultView("origin");
   };
 
@@ -379,6 +420,36 @@ export function DashboardClient() {
     return map;
   }, [laneRows]);
 
+  const landAdvice = useMemo(() => {
+    if (laneRows.length === 0) return null;
+    return adviseLandHaul({
+      startCityId: startLocation.id,
+      startCityLabel: startLocation.label,
+      nearestPortId: startLocation.nearestPortId,
+      destinationLabel: activeDestination.label,
+      containerCount,
+      containerType,
+      ranked: laneRows,
+    });
+  }, [laneRows, startLocation, activeDestination.label, containerCount, containerType]);
+
+  const inlandHaul = useMemo(
+    () =>
+      quoteCityToPort({
+        startCityId: startLocation.id,
+        toPortId: portId,
+        containerType,
+        containerCount,
+      }),
+    [startLocation.id, portId, containerType, containerCount],
+  );
+
+  const seaLane = useMemo(() => {
+    const origin = PORTS.find((p) => p.id === portId);
+    if (!origin || !mapDestination) return null;
+    return oceanRouteWithKm(origin, mapDestination);
+  }, [portId, mapDestination]);
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 sm:max-w-none sm:space-y-7">
       <div className="flex items-start justify-between gap-3">
@@ -387,13 +458,14 @@ export function DashboardClient() {
             Demurrage compare
           </Eyebrow>
           <h1 className="mt-3 text-title-1 font-semibold tracking-[-0.03em] text-ink sm:text-display-2">
-            {step === 1 && "Where are you shipping to?"}
+            {step === 1 && "Where does it start — and where is it going?"}
             {step === 2 && "Your boxes & carrier"}
             {step === 3 && "Best Indian ports to ship from"}
           </h1>
           <p className="mt-2 max-w-xl text-small text-ink-3 sm:text-body">
-            {step === 1 && "Pick export or domestic — we rank Indian origins on demurrage."}
-            {step === 2 && "Container, carrier, and a verified wait-fee date. Air temperature is not used."}
+            {step === 1 &&
+              "Start location is the factory or city. We pin the nearest modelled gate, then rank other gates on demurrage. Inland road/rail rupees stay pending until you feed rates."}
+            {step === 2 && "Container, carrier, and a verified wait-fee date. Ranking updates as soon as you pick a filled day. Air temperature is not used."}
             {step === 3 && `Best option first · demurrage · ${asOfDate}`}
           </p>
         </div>
@@ -433,9 +505,48 @@ export function DashboardClient() {
             label="Shipment type"
             className="w-full"
           />
+          <RouteStrip
+            fromCode={startLocation.cityCode}
+            fromLabel={startLocation.label}
+            toCode={destinationChipCode(activeDestination.id)}
+            toLabel={activeDestination.label}
+            fromHint="Start city"
+            toHint={laneMode === "export" ? "Export dest" : "Domestic dest"}
+          />
+          <div>
+            <p className="mb-3 text-label font-semibold uppercase text-ink-4">Start location</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {START_LOCATIONS.map((place) => {
+                const active = place.id === startLocationId;
+                return (
+                  <button
+                    key={place.id}
+                    type="button"
+                    onClick={() => setStartLocationId(place.id)}
+                    className={cn(
+                      "flex min-h-[4.5rem] flex-col items-start justify-center gap-1 rounded-card border px-3.5 py-3 text-left transition-colors",
+                      active
+                        ? "border-brand-orange/50 bg-brand-orange/15"
+                        : "border-hairline bg-surface-2 hover:bg-white/[0.05]",
+                    )}
+                  >
+                    <Navigation
+                      className={cn("h-4 w-4", active ? "text-brand-orange-soft" : "text-ink-4")}
+                      aria-hidden="true"
+                    />
+                    <span className="text-body font-semibold text-ink">{place.label}</span>
+                    <span className="text-label uppercase text-ink-4">
+                      Gate {portShortLabel(place.nearestPortId)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-small text-ink-4">{startLocation.hint}. Inland haul is not priced.</p>
+          </div>
           <div>
             <p className="mb-3 text-label font-semibold uppercase text-ink-4">Destination</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
               {destChoices.map((dest) => {
                 const active = dest.id === destinationId;
                 return (
@@ -455,10 +566,19 @@ export function DashboardClient() {
                       aria-hidden="true"
                     />
                     <span className="text-body font-semibold text-ink">{dest.label}</span>
+                    {laneMode === "export" ? (
+                      <span className="text-label uppercase text-ink-4">Wait-fee at origin</span>
+                    ) : null}
                   </button>
                 );
               })}
             </div>
+            {laneMode === "export" ? (
+              <p className="mt-2 text-small text-ink-4">
+                Five overseas dests match the five domestic ones. Ranking is still Indian wait-fee
+                — ocean days stay unknown and are not invented.
+              </p>
+            ) : null}
           </div>
           <Button variant="primary" size="lg" fullWidth withArrow onClick={() => setStep(2)}>
             Next · cargo details
@@ -512,6 +632,17 @@ export function DashboardClient() {
               />
             </Field>
           </Card>
+          <LiveLanePreview
+            rows={laneRows}
+            loading={lanesLoading}
+            asOfDate={asOfDate}
+            destinationLabel={activeDestination.label}
+            selectedLaneId={selectedLaneId}
+            preferredPortId={startLocation.nearestPortId}
+            onSelectLane={onHighlightLane}
+          />
+          {landAdvice ? <LandAdviceCard advice={landAdvice} /> : null}
+          <MonthlyCargoNote asOfDate={asOfDate} />
           {ipaBoard && ipaDate ? (
             <IpaVesselBoard
               board={ipaBoard}
@@ -552,6 +683,10 @@ export function DashboardClient() {
         <section className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 rounded-panel border border-hairline bg-surface-2/80 px-3 py-2.5 text-small text-ink-3">
             <span>
+              From <strong className="text-ink">{startLocation.label}</strong>
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>
               To <strong className="text-ink">{activeDestination.label}</strong>
             </span>
             <span aria-hidden="true">·</span>
@@ -570,6 +705,30 @@ export function DashboardClient() {
               Edit
             </button>
           </div>
+
+          <RouteStrip
+            fromCode={startLocation.cityCode}
+            fromLabel={`${startLocation.label} · ${portShortLabel(startLocation.nearestPortId)}`}
+            toCode={destinationChipCode(activeDestination.id)}
+            toLabel={activeDestination.label}
+            fromHint="Start"
+            toHint="Destination"
+          />
+
+          <Card tone="panel" padding="md">
+            <Field
+              label="Wait-fee date"
+              hint="Change the day here — ranking below refreshes. 2024 is the 2023 month-day analog."
+            >
+              <WaitFeeCalendar
+                value={asOfDate}
+                freeDays={EXPORT_FREE_DAYS[carrierId]}
+                onChange={setAsOfDate}
+              />
+            </Field>
+          </Card>
+          {landAdvice ? <LandAdviceCard advice={landAdvice} /> : null}
+          <MonthlyCargoNote asOfDate={asOfDate} />
 
           <SegmentedControl
             items={RESULT_TABS}
@@ -602,9 +761,12 @@ export function DashboardClient() {
                     destinationLabel={activeDestination.label}
                     recommendation={laneRec}
                     saveInr={saveInr}
+                    preferredPortId={startLocation.nearestPortId}
+                    startLabel={startLocation.label}
                     onSelectLane={onSelectLane}
                     onOpenMap={() => setResultView("map")}
                   />
+                  {laneExplanation ? <ExplanationCard explanation={laneExplanation} /> : null}
                   <div className="hidden md:block">
                     <LaneCompareTable
                       rows={laneRows}
@@ -672,8 +834,9 @@ export function DashboardClient() {
                 Back to ranking
               </Button>
               <p className="text-small text-ink-3">
-                Spin the globe. Orange arc is the selected origin → destination (schematic lane — not a
-                GPS sailing track).
+                Globe and map use a schematic <strong className="text-ink">water path</strong>, not an
+                air great-circle. Orange/green on the map are road and rail from your start city
+                using the PTPK cargo table.
               </p>
               <PortGlobe
                 ports={PORTS}
@@ -686,6 +849,28 @@ export function DashboardClient() {
                   const match = laneRows.find((r) => r.originPortId === id && r.status === "ok");
                   if (match) setSelectedLaneId(match.laneId);
                   setResultView("origin");
+                }}
+              />
+              {inlandHaul ? (
+                <CargoHaulCard haul={inlandHaul} seaKm={seaLane?.km ?? null} />
+              ) : null}
+              <PortMap
+                ports={PORTS}
+                costByPortId={mapCostByPort}
+                selectedPortId={portId}
+                destination={mapDestination}
+                laneLabel={mapLaneLabel}
+                start={{
+                  label: startLocation.label,
+                  lat: startLocation.lat,
+                  lng: startLocation.lng,
+                }}
+                inlandHaul={inlandHaul}
+                seaKm={seaLane?.km ?? null}
+                onSelectPort={(id) => {
+                  setPortId(id);
+                  const match = laneRows.find((r) => r.originPortId === id && r.status === "ok");
+                  if (match) setSelectedLaneId(match.laneId);
                 }}
               />
             </div>

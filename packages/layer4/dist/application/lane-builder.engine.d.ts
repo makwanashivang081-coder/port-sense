@@ -13,7 +13,7 @@ export declare class LaneBuilderEngine {
      */
     buildForDestination(dest: {
         destinationPortId?: PortId;
-        destinationCode?: "AEJEA" | "USGEN";
+        destinationCode?: import("../domain/types.js").ExportDestinationCode;
     }): LaneDefinition[];
     /** Reject nonsense like origin === destination domestic. */
     assertValidLane(lane: LaneDefinition): void;
