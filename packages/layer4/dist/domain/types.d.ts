@@ -20,6 +20,9 @@ export interface LaneEvaluateRequest {
     readonly containerCount?: number;
     /** Applied to every candidate origin for fair what-if compare */
     readonly dwellHoursOverride?: number;
+    /** Per-origin dwell (Layer 7 calendar). Wins over dwellHoursOverride for that port. */
+    readonly dwellHoursByPort?: Readonly<Partial<Record<import("@port-sense/layer2-canonical").PortId, number>>>;
+    readonly asOf?: string;
     readonly direction?: "export" | "import";
     readonly priority?: DecisionPriority;
 }

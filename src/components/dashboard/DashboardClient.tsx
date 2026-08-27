@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { ArrowLeft, MapPin, RotateCcw, Route } from "lucide-react";
 import { PORTS } from "@/lib/data/ports";
 import { SAMPLE_INPUT } from "@/lib/data/sample";
-import { DATA_PROVENANCE } from "@/lib/data/provenance";
 import {
   defaultDestination,
   destinationsForMode,
@@ -26,6 +25,7 @@ import { FormulaCard } from "@/components/dashboard/FormulaCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Select, TextInput, type SelectOption } from "@/components/ui/Field";
+import { AdvisorCard, type AdvisorView } from "@/components/dashboard/AdvisorCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { RiskBadge } from "@/components/ui/RiskBadge";
@@ -62,6 +62,7 @@ const CONTAINER_OPTIONS: readonly SelectOption<ContainerType>[] = [
 const MODE_TABS = [
   { id: "export", label: "Export" },
   { id: "domestic", label: "Domestic" },
+  { id: "inland", label: "Inland · road" },
 ] as const;
 
 const RESULT_TABS = [
@@ -182,6 +183,10 @@ export function DashboardClient() {
   const [lanesLoading, setLanesLoading] = useState(false);
   const [riskLoading, setRiskLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [asOfDate, setAsOfDate] = useState("2023-06-08");
+  const [temperatureC, setTemperatureC] = useState<number | null>(null);
+  const [temperatureBand, setTemperatureBand] = useState<string | null>(null);
+  const [advice, setAdvice] = useState<AdvisorView | null>(null);
 
   const activeDestination = useMemo(() => {
     return (
@@ -217,12 +222,13 @@ export function DashboardClient() {
 
   const cargo = useMemo(
     () => ({
-      shipDate: SAMPLE_INPUT.shipDate,
+      shipDate: asOfDate,
+      asOfDate,
       containerType,
       carrierId,
       containerCount,
     }),
-    [containerType, carrierId, containerCount],
+    [asOfDate, containerType, carrierId, containerCount],
   );
 
   const riskInput = useMemo<RiskInput>(() => ({ ...cargo, portId }), [cargo, portId]);
@@ -234,26 +240,120 @@ export function DashboardClient() {
     setDestinationId(next.id);
   }, [laneMode]);
 
-  // Fetch lanes only when on results step
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/clock?asOfDate=${asOfDate}`)
+      .then((r) => r.json())
+      .then((data: {
+        ok?: boolean;
+        clock?: {
+          ports: Array<{
+            portId: string;
+            temperatureC: number;
+            temperatureMinC: number;
+            temperatureMaxC: number;
+          }>;
+        };
+      }) => {
+        if (cancelled || !data.ok || !data.clock) return;
+        const jnpt = data.clock.ports.find((p) => p.portId === "INNSA") ?? data.clock.ports[0];
+        if (!jnpt) {
+          setTemperatureC(null);
+          setTemperatureBand(null);
+          return;
+        }
+        setTemperatureC(jnpt.temperatureC);
+        setTemperatureBand(`${jnpt.temperatureMinC.toFixed(1)}–${jnpt.temperatureMaxC.toFixed(1)}°C`);
+      })
+      .catch(() => {
+        if (!cancelled) setTemperatureC(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [asOfDate]);
+
+  // Fetch lanes / inland totals only when on results step
   useEffect(() => {
     if (step !== 3) return;
     let cancelled = false;
     setLanesLoading(true);
     setError(null);
-    fetch("/api/lanes", {
+    setAdvice(null);
+
+    const inland = laneMode === "inland";
+    const url = inland ? "/api/landed" : "/api/lanes";
+    const body = inland
+      ? { ...cargo, inlandId: activeDestination.apiValue, portId: "jnpt" }
+      : { ...cargo, destination: activeDestination.apiValue };
+
+    fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...cargo,
-        destination: activeDestination.apiValue,
-      }),
+      body: JSON.stringify(body),
     })
       .then(async (res) => {
-        const data = (await res.json()) as LanesApiOk | { ok: false; error?: string };
+        const data = (await res.json()) as
+          | LanesApiOk
+          | {
+              ok: true;
+              advice?: AdvisorView;
+              landed: {
+                recommendation?: string;
+                inlandLabel?: string;
+                saveInrVsRunnerUp: number | null;
+                ranked: Array<{
+                  originPortId: string;
+                  originName: string;
+                  originUiPortId: string | null;
+                  demurrageInr: number;
+                  truckingInr: number;
+                  totalInr: number;
+                  km?: number;
+                  road?: { formula?: string };
+                  riskLevel: RiskResult["riskLevel"];
+                  status: "ok" | "insufficient_data";
+                }>;
+                winner: { originUiPortId: string | null; originName: string } | null;
+              };
+            }
+          | { ok: false; error?: string };
         if (!data.ok) {
-          throw new Error("error" in data ? data.error ?? "Lane API failed" : "Lane API failed");
+          throw new Error("error" in data ? data.error ?? "Compare API failed" : "Compare API failed");
         }
         if (cancelled) return;
+
+        if ("landed" in data) {
+          const city = data.landed.inlandLabel ?? activeDestination.label;
+          const rows: LaneRowView[] = data.landed.ranked
+            .filter((r) => r.originUiPortId)
+            .map((r) => ({
+              laneId: `inland:${r.originPortId}`,
+              label: `${r.originName} → ${city}`,
+              originPortId: r.originUiPortId as string,
+              demurrageInr: r.demurrageInr,
+              truckingInr: r.truckingInr,
+              totalInr: r.totalInr,
+              km: r.km,
+              formula: r.road?.formula,
+              riskLevel: r.riskLevel,
+              status: r.status,
+              transitDays: null,
+            }));
+          setLaneRows(rows);
+          setLaneRec(data.advice?.summary ?? null);
+          setSaveInr(data.landed.saveInrVsRunnerUp);
+          setAdvice(data.advice ?? null);
+          const pick = rows.find((r) => r.status === "ok") ?? null;
+          if (pick) {
+            setSelectedLaneId(pick.laneId);
+            setPortId(pick.originPortId);
+          } else {
+            setSelectedLaneId(null);
+          }
+          return;
+        }
+
         const rows = toLaneRows(data);
         setLaneRows(rows);
         setLaneRec(data.recommendation);
@@ -278,7 +378,7 @@ export function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [step, cargo, activeDestination.apiValue]);
+  }, [step, cargo, activeDestination.apiValue, laneMode]);
 
   useEffect(() => {
     if (step !== 3 || !portId) return;
@@ -336,6 +436,8 @@ export function DashboardClient() {
     setResultView("results");
     setLaneRows([]);
     setError(null);
+    setAsOfDate("2023-06-08");
+    setAdvice(null);
   };
 
   const onSelectLane = (row: LaneRowView) => {
@@ -365,10 +467,12 @@ export function DashboardClient() {
             {step === 3 && "Best Indian ports to ship from"}
           </h1>
           <p className="mt-2 max-w-xl text-small text-ink-3 sm:text-body">
-            {step === 1 && "Pick export or domestic, then the destination. We rank Indian origins for you."}
-            {step === 2 && "Container size, how many, and which shipping line’s free-time tariff to use."}
+            {step === 1 && "Pick export, domestic, or inland (truck from port A to city B)."}
+            {step === 2 && "Container size, how many, shipping line, and the calendar date (temperature must move)."}
             {step === 3 &&
-              `Best option first · demurrage only (not detention) · ${DATA_PROVENANCE.chip}`}
+              (laneMode === "inland"
+                ? `Best origin first · wait fee + truck to ${activeDestination.label} · ${asOfDate} · ${temperatureC != null ? `${temperatureC.toFixed(1)}°C` : "temp…"}`
+                : `Best option first · demurrage · ${asOfDate} · ${temperatureC != null ? `${temperatureC.toFixed(1)}°C` : "temp…"}`)}
           </p>
         </div>
         <Button
@@ -403,7 +507,7 @@ export function DashboardClient() {
           <SegmentedControl
             items={MODE_TABS}
             value={laneMode}
-            onChange={setLaneMode}
+            onChange={(id: LaneMode) => setLaneMode(id)}
             label="Shipment type"
             className="w-full"
           />
@@ -475,10 +579,24 @@ export function DashboardClient() {
                 className="h-12"
               />
             </Field>
+            <Field label="Calendar date (2023–2024)" htmlFor="asOfDate">
+              <TextInput
+                id="asOfDate"
+                type="date"
+                min="2023-01-01"
+                max="2024-12-31"
+                value={asOfDate}
+                onChange={setAsOfDate}
+                className="h-12"
+              />
+            </Field>
             <p className="rounded-panel border border-hairline bg-surface-0/40 px-3 py-2.5 text-small text-ink-3">
-              To: <span className="font-medium text-ink">{activeDestination.label}</span>
-              {" · "}
-              {laneMode === "export" ? "Export" : "Domestic"}
+              Air temperature at JNPT on this date:{" "}
+              <span className="font-semibold tabular-nums text-ink">
+                {temperatureC != null ? `${temperatureC.toFixed(1)}°C` : "loading…"}
+              </span>
+              {temperatureBand ? ` (${temperatureBand})` : ""}
+              {" · "}change the date — this number must change (historical weather, not a live sensor).
             </p>
           </Card>
           <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
@@ -521,6 +639,17 @@ export function DashboardClient() {
             </span>
             <span aria-hidden="true">·</span>
             <span>{CARRIER_OPTIONS.find((c) => c.value === carrierId)?.label}</span>
+            <span aria-hidden="true">·</span>
+            <span className="tabular-nums">{asOfDate}</span>
+            {temperatureC != null ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="tabular-nums text-ink">
+                  {temperatureC.toFixed(1)}°C
+                  {temperatureBand ? ` ${temperatureBand}` : ""}
+                </span>
+              </>
+            ) : null}
             <button
               type="button"
               className="ml-auto text-label font-semibold uppercase text-brand-orange-soft"
@@ -555,12 +684,18 @@ export function DashboardClient() {
                     onSelectLane={onSelectLane}
                     onOpenMap={() => setResultView("map")}
                   />
+                  <AdvisorCard advice={advice} />
                   <div className="hidden md:block">
                     <LaneCompareTable
                       rows={laneRows}
                       selectedLaneId={selectedLaneId}
                       onSelectLane={onSelectLane}
                       title={`All origins → ${activeDestination.label}`}
+                      description={
+                        laneMode === "inland"
+                          ? "Total = port wait (demurrage) + truck km × ₹/km + 8% toll. Indicative, not a transporter quote. Ocean freight is not included."
+                          : undefined
+                      }
                     />
                   </div>
                 </>

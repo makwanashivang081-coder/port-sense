@@ -8,13 +8,44 @@ export interface ExplanationBullet {
     readonly factId?: string;
     readonly citation?: string;
 }
+export type ExplanationEngine = "layer5-template-v1" | "layer5-advisor-v2";
 export interface ExplanationResult {
     readonly title: string;
     readonly summary: string;
     readonly bullets: readonly ExplanationBullet[];
     readonly honestyNote: string;
-    readonly engine: "layer5-template-v1";
+    readonly engine: ExplanationEngine;
     readonly generatedAt: string;
+}
+export interface AdvisorSheetRow {
+    readonly origin: string;
+    readonly waitFeeInr: number;
+    readonly roadInr: number;
+    readonly totalInr: number;
+    readonly waitNote: string;
+}
+export interface AdvisorResult extends ExplanationResult {
+    readonly engine: "layer5-advisor-v2";
+    readonly spreadsheet: readonly AdvisorSheetRow[];
+    readonly pick: string | null;
+}
+export interface AdvisorInput {
+    readonly inlandLabel: string;
+    readonly asOfDate: string | null;
+    readonly temperatureC: number | null;
+    readonly winnerOrigin: string | null;
+    readonly saveInrVsRunnerUp: number | null;
+    readonly rows: ReadonlyArray<{
+        originName: string;
+        demurrageInr: number;
+        truckingInr: number;
+        totalInr: number;
+        highWait: boolean;
+        km: number;
+        riskLevel: "low" | "medium" | "high";
+        formula?: string;
+    }>;
+    readonly honestyNote: string;
 }
 export interface OriginExplainInput {
     readonly portName: string;

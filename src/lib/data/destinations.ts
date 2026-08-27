@@ -1,6 +1,6 @@
 import type { SelectOption } from "@/components/ui/Field";
 
-export type LaneMode = "domestic" | "export";
+export type LaneMode = "domestic" | "export" | "inland";
 
 export interface DestinationOption {
   readonly id: string;
@@ -62,6 +62,48 @@ export const DESTINATIONS: readonly DestinationOption[] = [
     label: "USA",
     hint: "Same Indian-origin demurrage as Dubai — ocean days unknown (not invented)",
   },
+  {
+    id: "surat",
+    mode: "inland",
+    apiValue: "IN_SURAT",
+    label: "Surat",
+    hint: "Waiting fee + truck to Surat",
+  },
+  {
+    id: "ahmedabad",
+    mode: "inland",
+    apiValue: "IN_AHMEDABAD",
+    label: "Ahmedabad",
+    hint: "Waiting fee + truck to Ahmedabad",
+  },
+  {
+    id: "pune",
+    mode: "inland",
+    apiValue: "IN_PUNE",
+    label: "Pune",
+    hint: "Waiting fee + truck to Pune",
+  },
+  {
+    id: "delhi",
+    mode: "inland",
+    apiValue: "IN_DELHI",
+    label: "Delhi NCR",
+    hint: "Waiting fee + truck to Delhi",
+  },
+  {
+    id: "hyderabad",
+    mode: "inland",
+    apiValue: "IN_HYD",
+    label: "Hyderabad",
+    hint: "Waiting fee + truck to Hyderabad",
+  },
+  {
+    id: "bengaluru",
+    mode: "inland",
+    apiValue: "IN_BLR",
+    label: "Bengaluru",
+    hint: "Waiting fee + truck to Bengaluru",
+  },
 ] as const;
 
 export function destinationsForMode(mode: LaneMode): DestinationOption[] {
@@ -69,7 +111,9 @@ export function destinationsForMode(mode: LaneMode): DestinationOption[] {
 }
 
 export function defaultDestination(mode: LaneMode): DestinationOption {
-  return mode === "export" ? DESTINATIONS.find((d) => d.id === "AEJEA")! : DESTINATIONS.find((d) => d.id === "chennai")!;
+  if (mode === "export") return DESTINATIONS.find((d) => d.id === "AEJEA")!;
+  if (mode === "inland") return DESTINATIONS.find((d) => d.id === "surat")!;
+  return DESTINATIONS.find((d) => d.id === "chennai")!;
 }
 
 export function destinationSelectOptions(mode: LaneMode): SelectOption<string>[] {
@@ -85,7 +129,7 @@ export interface MapDestinationPoint {
 }
 
 export const OVERSEAS_MAP_DESTINATIONS: Readonly<
-  Record<"AEJEA" | "USGEN", MapDestinationPoint>
+  Record<"AEJEA" | "USGEN" | "surat" | "ahmedabad" | "pune" | "delhi" | "hyderabad" | "bengaluru", MapDestinationPoint>
 > = {
   AEJEA: {
     id: "AEJEA",
@@ -99,13 +143,28 @@ export const OVERSEAS_MAP_DESTINATIONS: Readonly<
     lat: 33.7361,
     lng: -118.2636,
   },
+  surat: { id: "surat", label: "Surat", lat: 21.1702, lng: 72.8311 },
+  ahmedabad: { id: "ahmedabad", label: "Ahmedabad", lat: 23.0225, lng: 72.5714 },
+  pune: { id: "pune", label: "Pune", lat: 18.5204, lng: 73.8567 },
+  delhi: { id: "delhi", label: "Delhi NCR", lat: 28.6139, lng: 77.209 },
+  hyderabad: { id: "hyderabad", label: "Hyderabad", lat: 17.385, lng: 78.4867 },
+  bengaluru: { id: "bengaluru", label: "Bengaluru", lat: 12.9716, lng: 77.5946 },
 };
 
 export function resolveMapDestination(
   destinationId: string,
   domesticPorts: ReadonlyArray<{ id: string; name: string; code: string; lat: number; lng: number }>,
 ): MapDestinationPoint | null {
-  if (destinationId === "AEJEA" || destinationId === "USGEN") {
+  if (
+    destinationId === "AEJEA" ||
+    destinationId === "USGEN" ||
+    destinationId === "surat" ||
+    destinationId === "ahmedabad" ||
+    destinationId === "pune" ||
+    destinationId === "delhi" ||
+    destinationId === "hyderabad" ||
+    destinationId === "bengaluru"
+  ) {
     return OVERSEAS_MAP_DESTINATIONS[destinationId];
   }
   const port = domesticPorts.find((p) => p.id === destinationId);

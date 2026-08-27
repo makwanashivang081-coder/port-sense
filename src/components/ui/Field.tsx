@@ -77,8 +77,8 @@ interface TextInputProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   required?: boolean;
-  min?: number;
-  max?: number;
+  min?: number | string;
+  max?: number | string;
   autoComplete?: string;
   className?: string;
 }

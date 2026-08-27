@@ -1,108 +1,228 @@
-# Port Sense — SIH viva Q&A (practice sheet)
+# Port Sense — Complete Q&A (website, data, tech, pending, “ML”)
 
-Short answers you can say out loud. Keep the first sentence; expand only if they dig.
+Say the short answer first. Expand only if they ask.
 
----
-
-## Product basics
-
-**Q: What is Port Sense?**  
-A: A demurrage intelligence tool for Indian MSME exporters. It turns port congestion into rupees at risk *before* they book — so they can pick a cheaper origin gate.
-
-**Q: Who is the user?**  
-A: Small and medium exporters who can’t buy enterprise logistics platforms. They feel demurrage on thin margins.
-
-**Q: What problem do you solve?**  
-A: Avoidable waiting charges at congested Indian ports. The invoice arrives after the margin is gone. We price the wait early.
+**Live:** https://port-sense-iota.vercel.app  
+**Code:** https://github.com/makwanashivang081-coder/port-sense
 
 ---
 
-## Demurrage vs detention (they will mix these up)
+## A. Why does this exist?
 
-**Q: What is demurrage?**  
-A: Fee when the *container sits at the port/terminal* longer than the carrier’s free days.
+**Q: Why does Port Sense exist?**  
+**A:** Small Indian exporters lose money when containers wait at congested ports (demurrage). Big companies buy expensive tools; MSMEs often find out on the invoice. We exist to show **rupees at risk before booking**.
 
-**Q: What is detention?**  
-A: Fee when you keep the container *outside the port* (warehouse/factory) too long after gate-out.
+**Q: Who is it for?**  
+**A:** Indian MSME exporters / anyone booking containers out of Indian ports who needs a simple compare.
 
-**Q: Where do you show detention on the website?**  
-A: **We don’t.** V1 only prices **demurrage at the Indian origin**. Detention is out of scope so we don’t invent numbers. If a faculty member points at “D&D” on a tariff PDF: that document covers both; our calculator uses the demurrage slabs only.
+**Q: What problem do we solve?**  
+**A:** “Which Indian port should I ship from for this destination, so I don’t burn money waiting?”
 
----
-
-## Data — where stored, how it works
-
-**Q: Where is the data stored?**  
-A: In a **canonical snapshot** — a versioned JSON file (`data/canonical-snapshot.json`) built by Layer 2. The Next.js APIs load that snapshot on the server. Not a live AIS feed, not a random Excel on the laptop during demo.
-
-**Q: Where do the raw sources come from?**  
-A: Verified packs under our data room: JNPA LDB monthly dwell for JNPT, published port snapshots for other gates, carrier tariff notices for free time + demurrage slabs. Each fact keeps a citation path.
-
-**Q: What month is this data?**  
-A: **JNPT dwell = June 2026** (JNPA LDB month-end). **Other Indian ports = May 2025** snapshots. **Tariffs = 2023–2026 published notices.** Stated on Home, About, and Dashboard.
-
-**Q: How does the data flow work?**  
-A: Five layers:  
-1) **Ingestion** — validate source files  
-2) **Canonical** — trusted facts in one snapshot  
-3) **Cost / Risk** — dwell + free time + slabs → ₹ + risk  
-4) **Lanes** — rank origins for a destination  
-5) **Explanation** — template “why” with citations  
-UI (`port-sense`) only calls APIs; it doesn’t invent math.
-
-**Q: Is this live / real-time?**  
-A: No. Published baselines + a congestion buffer estimate. We refuse fake live AIS. Honesty is a feature for SIH evaluation.
-
-**Q: What if data is missing?**  
-A: **Fail closed** — show insufficient / Unknown (e.g. ocean transit to USA), never invent sailing days.
+**Q: Why not just Google / ask a forwarder?**  
+**A:** Forwarders help with booking; we productize a **cited compare of demurrage risk** across ports in one flow, in rupees, on a phone-friendly site.
 
 ---
 
-## Numbers on screen
+## B. What exists today (what’s built)
 
-**Q: Why can demurrage be ₹0?**  
-A: Estimated dwell is still inside carrier **free time**. That is correct, not a bug.
+**Q: What exists on the website?**  
+**A:**
+- **Home** — product story / slides  
+- **About** — why we built it + data period  
+- **Services** — what capabilities we claim  
+- **Contact**  
+- **Dashboard** — the real product (3-step wizard)
 
-**Q: What does the Carrier dropdown do?**  
-A: Each line has different free days and demurrage slabs. Same boxes, different ₹. “Not decided” defaults to Maersk as a planning proxy.
+**Q: What can the Dashboard do right now?**  
+**A:**
+1. Choose **Export / Domestic** and **destination** (Dubai, USA, Chennai, etc.)  
+2. Enter **container size, quantity, carrier**  
+3. See **ranked Indian origins**, **best first**  
+4. Open **origin detail** (risk, breakdown)  
+5. Open **map** (ports + straight from→to line)  
+6. APIs report stack health (`/api/health`, `/api/lanes`, `/api/risk`)
 
-**Q: Why JNPT → Dubai, not AEJEA?**  
-A: UI shows plain names (JNPT, Dubai, USA). Codes like AEJEA/INNSA are internal UN/LOCODEs in the backend only.
+**Q: What backends / layers exist?**  
+**A:**
+- **L1 Ingestion** — validate source files  
+- **L2 Canonical** — trusted facts snapshot  
+- **L3 Cost + Risk + Estimate** — demurrage ₹ + risk  
+- **L4 Lanes** — catalog + rank origins for a destination  
+- **L5 Explanation** — **template** “why” text (not ChatGPT)  
+- **port-sense UI** — Next.js app on Vercel  
 
-**Q: What does the orange bar next to a lane mean?**  
-A: Selected row highlight — which lane you clicked.
+**Q: What destinations exist?**  
+**A:** Export: **Dubai (Jebel Ali)**, **USA (stub)**. Domestic: Chennai, Cochin, JNPT, Vizag, Kolkata (as “to”). Origins: JNPT, Mundra, Chennai, Cochin, Vizag, Kolkata (as available in catalog).
 
-**Q: What does the dashed line on the map mean?**  
-A: Illustrative **sea route** around the coast for from→to. Not land, not live ship tracking.
+**Q: Carriers?**  
+**A:** Maersk, MSC, CMA CGM, Hapag-Lloyd, or “not decided” (defaults to Maersk tariff structure).
 
 ---
 
-## Tech stack (30 seconds)
+## C. What the website is good at
 
-**Q: Tech stack?**  
-A: **Next.js + React + TypeScript + Tailwind** for UI. **Leaflet** for maps. **Recharts** for charts. Business logic in five **TypeScript layer packages** with a service-layer / clean architecture. Deployed on **Vercel**; code on **GitHub**.
+**Q: What are we good at?**  
+**A:**
+- Clear **phone-friendly flow** (Where → Cargo → Best ports)  
+- **Best option first** (not a confusing spreadsheet dump)  
+- **Honest scope** — demurrage at Indian origin, cited periods  
+- **Comparable lanes** across ports for one shipment setup  
+- **Fail closed** when we don’t have transit (e.g. USA ocean days = Unknown)  
+- Fast **demo URL** for judges (Vercel)
 
-**Q: Why layers / clean architecture?**  
-A: UI must not own pricing math. Swap a live feed later without rewriting the dashboard. Test and cite each stage.
+**Q: What value does a user get in 1 minute?**  
+**A:** “For my destination and boxes, Mundra/JNPT/… ranks like this on estimated demurrage — pick the best origin.”
+
+---
+
+## D. What is pending / not done / out of scope
+
+**Q: What is still pending?**  
+**A:**
+- **Live AIS / live ship tracking** — not built (on purpose for V1)  
+- **Real ocean sailing schedules** for USA/Dubai transit days — mostly **Unknown / stub**  
+- **Detention calculator** — not on site  
+- **Full ocean freight (shipping rate) quote** — not our V1  
+- **True ML / deep learning predictor** — not deployed as a neural net  
+- **Layer 5 LLM AI explanations** — pending; we use **templates** now  
+- **WhatsApp alerts / threshold notifications** — partial / next  
+- **Login, saved bookings, multi-user accounts** — not V1  
+- **Every Indian port** — only our verified set  
+- **Pipavav etc.** only if dwell is sourced (prefer insufficient over fake)
+
+**Q: What will you say if they ask “is it complete?”**  
+**A:** “V1 is complete for **demurrage lane compare on cited baselines**. Live AIS, detention, freight quoting, and LLM explanations are **next**, not claimed as done.”
+
+---
+
+## E. “ML model” — honest answers (important)
+
+**Q: Are you using an ML model?**  
+**A:** **Not a trained neural network / black-box ML.** We use a **documented dwell estimate rule**:  
+
+> **Estimated dwell = published Layer-2 dwell + fixed congestion buffer per port**  
+> Model id: `estimate-v1-congestion`
+
+Money still comes from **published carrier tariff slabs**.
+
+**Q: Why this “model” / estimate at all?**  
+**A:** Published average dwell alone often sits **inside free time** → demurrage shows ₹0 always and the demo can’t show risk. The buffer is an **honest, named estimate** so congestion risk can push past free time — **not fake live AIS**.
+
+**Q: Is Layer 5 AI?**  
+**A:** **No LLM in V1.** Layer 5 fills a **template** (“why these numbers”) with citations. Full AI explanation is **planned later**.
+
+**Q: Any prediction of the exact carrier invoice?**  
+**A:** No. We estimate **exposure**, not the final bill. Actual invoice depends on contract and operations.
+
+---
+
+## F. Where is data stored? (every little detail)
+
+**Q: Where is the main data the website uses?**  
+**A:** **Canonical snapshot JSON**  
+- In the repo/app: `data/canonical-snapshot.json`  
+- Also under Layer 2: `packages/layer2/data/canonical-snapshot.json`  
+Server APIs load this on Vercel. This is the **system of record for V1 facts**.
+
+**Q: Is there a database (Postgres/Mongo)?**  
+**A:** **Not in V1.** Snapshot file + packages. Chosen so every number is **auditable and seedable** for SIH.
+
+**Q: Where do raw verified sources live?**  
+**A:** Project data room (e.g. `data accurate/01-verified/`) — CSVs, PDFs, research notes. Layer 1 validates; Layer 2 seeds the snapshot. The public website does **not** browse that folder live on each click.
+
+**Q: What kinds of facts are in the snapshot?**  
+**A:** Port dwell (monthly / snapshot), carrier demurrage tariffs (free days + slabs), FX where needed, provenance metadata (asOf, source paths).
+
+**Q: What month is the data?**  
+**A:**
+- **JNPT dwell: June 2026** (JNPA LDB)  
+- **Other ports: May 2025** snapshots  
+- **Tariffs: 2023–2026** notices  
+- Series for JNPA monthly roughly **Oct 2024 – Jun 2026**
+
+**Q: Where does UI config live (ports list, destinations, sample)?**  
+**A:** Frontend data files, e.g.  
+- `src/lib/data/ports.ts`  
+- `src/lib/data/destinations.ts`  
+- `src/lib/data/provenance.ts` (month labels for the site)  
+- `src/lib/data/sample.ts`  
+
+**Q: Where does lane catalog live?**  
+**A:** Layer 4: `packages/layer4/.../lane-catalog.ts` (which from→to pairs exist).
+
+**Q: Where does the congestion buffer (“estimate model”) live?**  
+**A:** Layer 3: `dwell-estimate.service.ts` — fixed hours per port id + published dwell.
+
+**Q: Where is code hosted? Where is the site hosted?**  
+**A:** Code → **GitHub**. Live site → **Vercel** (serverless Next.js).
+
+---
+
+## G. Website flow (product UX)
+
+**Q: Exact user flow?**  
+**A:** Dashboard → (1) Where to → (2) Cargo → Compare → (3) Best ports (#1 card) → Detail or Map → Start over if needed.
+
+**Q: What is a shipping lane on our site?**  
+**A:** **From Indian port → To destination.** We rank “from” options for your “to.”
+
+**Q: What does the map line mean?**  
+**A:** **Straight schematic** from→to. Not a sailing path, not live tracking.
+
+**Q: Orange bar / #1 card?**  
+**A:** Best / selected lane highlight — lowest demurrage among OK lanes first.
+
+---
+
+## H. Tech stack + why each piece
+
+| Piece | What | Why |
+|-------|------|-----|
+| **Next.js** | App + APIs | One codebase, fast demo deploy |
+| **React** | UI | Components for wizard, cards, map |
+| **TypeScript** | Typed JS | Safer money logic |
+| **Tailwind** | CSS | Fast consistent UI, mobile |
+| **Leaflet** | Map | Lightweight port pins + line |
+| **Recharts** | Charts | Congestion trend in detail |
+| **Layer packages** | L1–L5 services | Clean architecture; UI ≠ math |
+| **Vercel** | Hosting | HTTPS URL for judges |
+| **GitHub** | Source | Version control + push to deploy |
 
 **Q: Frontend vs backend?**  
-A: Same Next.js app: React pages + `/api/lanes`, `/api/risk`, `/api/health` server routes that call Layers 2–5.
+**A:** Same Next.js project. Browser = React. Server = `/api/lanes`, `/api/risk`, `/api/health` calling layers + snapshot.
+
+**Q: Why clean architecture / services?**  
+**A:** So we can change data sources later without rewriting the whole website; math is testable and citeable.
 
 ---
 
-## Scope & honesty (marks magnets)
+## I. Money terms (quick)
 
-**Q: What is out of scope?**  
-A: Live AIS, invented ocean transit, full detention calculator, full freight rates, black-box AI invoice prediction.
-
-**Q: Why include USA if transit is Unknown?**  
-A: To show we still compare **Indian-origin demurrage** for that booking choice, without faking sailing days we don’t have.
-
-**Q: How does this help policy / Sagarmala?**  
-A: Lower avoidable logistics cost for MSMEs → export competitiveness. We speak in rupees, not jargon.
+**Q: Demurrage?** Waiting fee **at the port** after free days. **We show this.**  
+**Q: Detention?** Waiting fee **outside the port**. **We don’t show this.**  
+**Q: Free time?** Free waiting days from the carrier.  
+**Q: Why ₹0?** Dwell still inside free time — valid.  
+**Q: Why carrier matters?** Different free days / slabs → different ₹.
 
 ---
 
-## One-liner close
+## J. Rapid-fire cheat sheet
 
-> “Port Sense: cited published port + tariff data → demurrage ₹ at Indian gates → ranked lanes before booking. Not live AIS. Not detention. June 2026 JNPT dwell.”
+| Question | Answer |
+|----------|--------|
+| Why exist? | MSMEs lose money on port waiting — show ₹ before booking |
+| Good at? | Rank origins, best first, honest cited baselines, mobile flow |
+| Pending? | Live AIS, detention, freight quote, real transit ML/LLM |
+| ML? | Rule-based estimate-v1 (dwell + buffer), not neural net |
+| Data store? | Canonical JSON snapshot on server |
+| JNPT month? | June 2026 |
+| Host? | Vercel |
+| Code? | GitHub |
+| Detention on site? | No |
+| Live ships? | No |
+
+---
+
+## K. Closing (30 seconds)
+
+> “Port Sense exists so MSME exporters can see **demurrage risk in rupees** and pick the **best Indian origin** before they book. The website walks **destination → cargo → ranked ports**. Data lives in a **cited canonical snapshot** (JNPT June 2026). Our ‘model’ is a **documented congestion estimate on published dwell**, not fake live AIS and not a black-box neural net. Live AIS, detention, and LLM explanations are **pending** — V1 is strong on **honest lane compare**.”

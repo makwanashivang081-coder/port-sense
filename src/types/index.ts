@@ -49,6 +49,8 @@ export interface RiskInput {
   containerType: ContainerType;
   carrierId: CarrierId;
   containerCount: number;
+  /** Calendar day 2023-01-01 … 2024-12-31 — drives Layer 7 dwell + temperature */
+  asOfDate?: string;
 }
 
 export interface RiskResult {

@@ -32,10 +32,10 @@ export function LayersStatusStrip() {
     <Card tone="outline" padding="sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CardLabel icon={<Layers className="h-3.5 w-3.5" aria-hidden="true" />}>
-          Stack L1–L5 {ok === true ? "· ready" : ok === false ? "· check seed/validate" : ""}
+          Stack L1–L7 {ok === true ? "· ready" : ok === false ? "· check seed/validate" : ""}
         </CardLabel>
       </div>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-5">
+      <ul className="mt-3 grid gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {layers.map((layer) => (
           <li
             key={layer.id}

@@ -1,0 +1,62 @@
+/**
+ * Layer 7 — Time engine (calendar + simulated live replay).
+ * Does not invent AIS. Dwell for 2023 JNPT comes from the verified event CSV.
+ */
+import type { PortId } from "@port-sense/layer2-canonical";
+export declare const LIVE_INTERVAL_MINUTES: 10;
+export declare const CALENDAR_MIN: "2023-01-01";
+export declare const CALENDAR_MAX: "2024-12-31";
+export type DwellBasis = "jnpt_events_2023" | "jnpt_monthly_ldb" | "analog_2023_mmdd" | "scaled_from_jnpt_shape";
+export interface DailyDwellRow {
+    readonly date: string;
+    readonly count: number;
+    readonly meanHours: number;
+    readonly p50Hours: number;
+    readonly p90Hours: number;
+    readonly minHours: number;
+    readonly maxHours: number;
+    readonly sampleHours: readonly number[];
+}
+export interface TemperaturePoint {
+    readonly date: string;
+    readonly meanC: number;
+    readonly minC: number;
+    readonly maxC: number;
+}
+export interface PortClockReading {
+    readonly portId: PortId;
+    readonly temperatureC: number;
+    readonly temperatureMinC: number;
+    readonly temperatureMaxC: number;
+    readonly temperatureSource: string;
+    readonly dwellHours: number;
+    readonly dwellBasis: DwellBasis;
+    readonly dwellNote: string;
+    readonly scaleVsJnptYear: number;
+}
+export interface ClockSnapshot {
+    readonly asOfDate: string;
+    readonly analogDate: string | null;
+    readonly jnptDaily: DailyDwellRow | null;
+    readonly monthlyPeriodKey: string | null;
+    readonly ports: readonly PortClockReading[];
+    readonly honestyNote: string;
+}
+export interface LiveObservation {
+    readonly id: string;
+    readonly postedAt: string;
+    readonly asOfDate: string;
+    readonly portId: PortId;
+    readonly dwellHours: number;
+    readonly temperatureC: number;
+    readonly label: string;
+}
+export interface LiveFeed {
+    readonly asOfDate: string;
+    readonly tickMinutes: typeof LIVE_INTERVAL_MINUTES;
+    readonly nextPostAt: string;
+    readonly observations: readonly LiveObservation[];
+    readonly clock: ClockSnapshot;
+    readonly agentNote: string;
+}
+//# sourceMappingURL=types.d.ts.map

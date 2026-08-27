@@ -18,6 +18,10 @@ export interface LaneRowView {
   status: "ok" | "insufficient_data";
   transitDays: number | null;
   citation?: string;
+  truckingInr?: number;
+  totalInr?: number;
+  km?: number;
+  formula?: string;
 }
 
 type Verdict = "best" | "avoid" | "ok" | "insufficient";
@@ -49,7 +53,8 @@ export function LaneCompareTable({
 }: LaneCompareTableProps) {
   const okRows = rows.filter((r) => r.status === "ok");
   const bestId = okRows[0]?.laneId;
-  const bestCost = okRows[0]?.demurrageInr ?? 0;
+  const bestCost = okRows[0]?.totalInr ?? okRows[0]?.demurrageInr ?? 0;
+  const inland = rows.some((r) => r.truckingInr != null);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTableRowElement>, row: LaneRowView) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -78,10 +83,20 @@ export function LaneCompareTable({
                 Risk
               </th>
               <th scope="col" className={cn(CELL, "py-3 font-semibold")}>
-                Transit
+                {inland ? "Km" : "Transit"}
               </th>
+              {inland ? (
+                <th scope="col" className={cn(CELL, "py-3 font-semibold")}>
+                  Wait ₹
+                </th>
+              ) : null}
+              {inland ? (
+                <th scope="col" className={cn(CELL, "py-3 font-semibold")}>
+                  Road ₹
+                </th>
+              ) : null}
               <th scope="col" className={cn(CELL, "py-3 font-semibold")}>
-                Demurrage ₹
+                {inland ? "Total ₹" : "Demurrage ₹"}
               </th>
               <th scope="col" className={cn(CELL, "py-3 font-semibold")}>
                 vs best
@@ -95,7 +110,7 @@ export function LaneCompareTable({
             {rows.map((row) => {
               const isBest = row.laneId === bestId;
               const isSelected = row.laneId === selectedLaneId;
-              const delta = row.demurrageInr - bestCost;
+              const delta = (row.totalInr ?? row.demurrageInr) - bestCost;
               const verdict: Verdict =
                 row.status !== "ok"
                   ? "insufficient"
@@ -131,9 +146,13 @@ export function LaneCompareTable({
                       />
                     )}
                     <span className="block text-body font-medium text-ink">{row.label}</span>
-                    <span className="block text-label font-semibold uppercase text-ink-4">
-                      Demurrage at origin · not detention
-                    </span>
+                    {row.formula ? (
+                      <span className="block text-label text-ink-4">{row.formula}</span>
+                    ) : (
+                      <span className="block text-label font-semibold uppercase text-ink-4">
+                        {inland ? "Wait + truck · not a lorry quote" : "Demurrage at origin · not detention"}
+                      </span>
+                    )}
                   </td>
                   <td className={CELL}>
                     {row.status === "ok" ? (
@@ -143,7 +162,13 @@ export function LaneCompareTable({
                     )}
                   </td>
                   <td className={cn(CELL, "text-body tabular-nums text-ink-2")}>
-                    {row.transitDays == null ? (
+                    {inland ? (
+                      row.km != null ? (
+                        `${row.km} km`
+                      ) : (
+                        "—"
+                      )
+                    ) : row.transitDays == null ? (
                       <span className="text-ink-4" title="No verified sailing time in our data">
                         Unknown
                       </span>
@@ -151,6 +176,16 @@ export function LaneCompareTable({
                       `${row.transitDays}d`
                     )}
                   </td>
+                  {inland ? (
+                    <td className={cn(CELL, "text-body tabular-nums text-ink-2")}>
+                      {row.status !== "ok" ? "—" : formatINR(row.demurrageInr)}
+                    </td>
+                  ) : null}
+                  {inland ? (
+                    <td className={cn(CELL, "text-body tabular-nums text-ink-2")}>
+                      {row.status !== "ok" || row.truckingInr == null ? "—" : formatINR(row.truckingInr)}
+                    </td>
+                  ) : null}
                   <td
                     className={cn(
                       CELL,
@@ -162,7 +197,7 @@ export function LaneCompareTable({
                           : "text-ink",
                     )}
                   >
-                    {row.status !== "ok" ? "—" : formatINR(row.demurrageInr)}
+                    {row.status !== "ok" ? "—" : formatINR(row.totalInr ?? row.demurrageInr)}
                   </td>
                   <td className={cn(CELL, "text-small tabular-nums text-ink-4")}>
                     {row.status !== "ok"

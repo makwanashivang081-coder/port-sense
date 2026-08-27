@@ -87,6 +87,7 @@ function run(raw: unknown) {
         containerType: parsed.containerType,
         carrierId: parsed.carrierId,
         containerCount: parsed.containerCount,
+        ...(parsed.asOfDate ? { asOfDate: parsed.asOfDate } : {}),
       },
       dest,
     );

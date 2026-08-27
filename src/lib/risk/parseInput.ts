@@ -30,11 +30,17 @@ export function parseRiskInput(raw: unknown): RiskInput | null {
       ? data.shipDate
       : SAMPLE_INPUT.shipDate;
 
+  const asOfDate =
+    typeof data.asOfDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.asOfDate)
+      ? data.asOfDate
+      : undefined;
+
   return {
     portId,
     shipDate,
     containerType: containerType as ContainerType,
     carrierId: carrierId as CarrierId,
     containerCount: Math.min(50, Math.floor(count)),
+    ...(asOfDate ? { asOfDate } : {}),
   };
 }

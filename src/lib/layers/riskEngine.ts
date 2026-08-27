@@ -12,6 +12,7 @@ import {
   getExplanationRuntime,
   getLaneRuntime,
 } from "@/lib/layers/runtime";
+import { dwellHoursByPort } from "@/lib/layers/timeClock";
 import { layerPortToUi, uiCarrierToLayer, uiPortToLayer } from "@/lib/layers/ids";
 
 export type LayerRiskMath = RiskMath;
@@ -133,12 +134,18 @@ export function evaluateRiskWithLayers(input: RiskInput): LayerRiskPayload | nul
     return null;
   }
 
+  const dwellOverride =
+    input.asOfDate !== undefined
+      ? dwellHoursByPort(input.asOfDate)[layerPort]
+      : undefined;
+
   const evaluated = decision.evaluate({
     portId: layerPort,
     carrierId,
     direction: "export",
     containerSize: input.containerType,
     containerCount: input.containerCount,
+    ...(dwellOverride !== undefined ? { dwellHoursOverride: dwellOverride } : {}),
   });
 
   const result = mapDecisionToRiskResult(input, evaluated);
@@ -196,12 +203,17 @@ export function comparePortsWithLayers(
       continue;
     }
     try {
+      const dwellOverride =
+        input.asOfDate !== undefined
+          ? dwellHoursByPort(input.asOfDate)[layerPort]
+          : undefined;
       const evaluated = decision.evaluate({
         portId: layerPort as PortId,
         carrierId,
         direction: "export",
         containerSize: input.containerType,
         containerCount: input.containerCount,
+        ...(dwellOverride !== undefined ? { dwellHoursOverride: dwellOverride } : {}),
       });
       rows.push({
         portId: port.id,
@@ -238,11 +250,14 @@ export function decideLaneWithLayers(
   destination: { destinationCode: "AEJEA" | "USGEN" } | { destinationPortId: PortId },
 ) {
   const { decision } = getLaneRuntime();
+  const dwellByPort =
+    input.asOfDate !== undefined ? dwellHoursByPort(input.asOfDate) : undefined;
   const lane = decision.decideForDestination(destination, {
     carrierId: uiCarrierToLayer(input.carrierId),
     containerSize: input.containerType,
     containerCount: input.containerCount,
     priority: "balanced",
+    ...(dwellByPort !== undefined ? { dwellHoursByPort: dwellByPort } : {}),
   });
 
   const explanation = getExplanationRuntime().explanation.explainLane({

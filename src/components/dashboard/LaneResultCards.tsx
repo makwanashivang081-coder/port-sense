@@ -28,7 +28,8 @@ export function LaneResultCards({
   const okRows = rows.filter((r) => r.status === "ok");
   const best = okRows[0] ?? null;
   const rest = best ? rows.filter((r) => r.laneId !== best.laneId) : rows;
-  const bestCost = best?.demurrageInr ?? 0;
+  const bestCost = best?.totalInr ?? best?.demurrageInr ?? 0;
+  const inland = best?.truckingInr != null;
 
   return (
     <div className="space-y-4">
@@ -36,7 +37,7 @@ export function LaneResultCards({
         <article className="overflow-hidden rounded-card border border-brand-orange/40 bg-gradient-to-b from-brand-orange/15 to-surface-2 shadow-lift">
           <div className="flex items-center justify-between gap-3 border-b border-brand-orange/20 px-4 py-3 sm:px-5">
             <p className="text-label font-semibold uppercase tracking-[0.12em] text-brand-orange-soft">
-              Best for demurrage
+              Best for {best.totalInr != null ? "total ₹" : "demurrage"}
             </p>
             <span className="rounded-full border border-risk-low/40 bg-risk-low/15 px-2.5 py-0.5 text-label font-semibold uppercase text-risk-low">
               #1 pick
@@ -54,15 +55,25 @@ export function LaneResultCards({
             </div>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-label font-semibold uppercase text-ink-4">Est. demurrage</p>
+                <p className="text-label font-semibold uppercase text-ink-4">
+                  {best.totalInr != null ? "Est. total (wait + road)" : "Est. demurrage"}
+                </p>
                 <p className="mt-1 font-display text-[2rem] font-semibold leading-none tabular-nums tracking-[-0.04em] text-brand-orange-soft sm:text-[2.4rem]">
-                  {formatINR(best.demurrageInr)}
+                  {formatINR(best.totalInr ?? best.demurrageInr)}
                 </p>
                 {saveInr != null && saveInr > 0 ? (
                   <p className="mt-2 text-small text-risk-low">Saves {formatINR(saveInr)} vs next</p>
                 ) : (
                   <p className="mt-2 text-small text-ink-4">₹0 OK if still inside free time</p>
                 )}
+                {inland && best.truckingInr != null ? (
+                  <p className="mt-2 text-small text-ink-3">
+                    Wait {formatINR(best.demurrageInr)}
+                    {" · "}
+                    road {formatINR(best.truckingInr)}
+                    {best.km != null ? ` · ${best.km} km` : ""}
+                  </p>
+                ) : null}
               </div>
               <RiskBadge level={best.riskLevel} score={best.riskScore ?? 0} size="md" />
             </div>
@@ -82,7 +93,7 @@ export function LaneResultCards({
                 See why this port
               </Button>
               <Button variant="outline" size="md" fullWidth onClick={onOpenMap}>
-                View sea map
+                View map
               </Button>
             </div>
           </div>
@@ -100,7 +111,7 @@ export function LaneResultCards({
             {rest.map((row, index) => {
               const selectable = row.status === "ok";
               const selected = row.laneId === selectedLaneId;
-              const delta = row.demurrageInr - bestCost;
+              const delta = (row.totalInr ?? row.demurrageInr) - bestCost;
               return (
                 <li key={row.laneId}>
                   <button
@@ -129,7 +140,7 @@ export function LaneResultCards({
                     </span>
                     <span className="shrink-0 text-right">
                       <span className="block text-body font-semibold tabular-nums text-ink">
-                        {row.status !== "ok" ? "—" : formatINR(row.demurrageInr)}
+                        {row.status !== "ok" ? "—" : formatINR(row.totalInr ?? row.demurrageInr)}
                       </span>
                       {selectable ? (
                         <span className="mt-1 inline-flex items-center gap-0.5 text-label text-ink-4">

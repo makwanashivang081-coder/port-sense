@@ -4,6 +4,8 @@ import { createCanonicalClient } from "@port-sense/layer2-canonical";
 import { createDecisionRuntime } from "@port-sense/layer3-decision";
 import { createLaneRuntime, LANE_CATALOG } from "@port-sense/layer4-decision";
 import { createExplanationRuntime } from "@port-sense/layer5-explanation";
+import { createLandedRuntime } from "@port-sense/layer6-landed";
+import { createTimeRuntime } from "@port-sense/layer7-time";
 import { resolveCanonicalSnapshotPath } from "@/lib/layers/snapshotPath";
 
 export interface LayerStatusRow {
@@ -110,9 +112,27 @@ export function getStackStatus(): {
       insufficientCount: 0,
       honestyNote: "stack",
     });
-    l5Ready = sample.engine === "layer5-template-v1";
+    l5Ready = sample.engine.startsWith("layer5-");
   } catch {
     l5Ready = false;
+  }
+
+  let l6Ready = false;
+  try {
+    const landed = createLandedRuntime();
+    const quote = landed.landed.quoteRoad("INNSA", "JNPT", "40ft", 1, "IN_SURAT");
+    l6Ready = Boolean(quote && quote.truckingInr > 0);
+  } catch {
+    l6Ready = false;
+  }
+
+  let l7Ready = false;
+  try {
+    const t1 = createTimeRuntime().clock.resolveDay("2023-01-01").ports.find((p) => p.portId === "INNSA");
+    const t2 = createTimeRuntime().clock.resolveDay("2023-06-08").ports.find((p) => p.portId === "INNSA");
+    l7Ready = Boolean(t1 && t2 && t1.temperatureC !== t2.temperatureC);
+  } catch {
+    l7Ready = false;
   }
 
   const layers: LayerStatusRow[] = [
@@ -148,9 +168,23 @@ export function getStackStatus(): {
     },
     {
       id: "layer5",
-      name: "Explanation",
+      name: "Advisor",
       ready: l5Ready,
-      detail: l5Ready ? "why-these-numbers (template)" : "unavailable",
+      detail: l5Ready ? "template + inland advisor" : "unavailable",
+      lastAt: null,
+    },
+    {
+      id: "layer6",
+      name: "Landed cost",
+      ready: l6Ready,
+      detail: l6Ready ? "demurrage + road A→B (6 cities)" : "unavailable",
+      lastAt: null,
+    },
+    {
+      id: "layer7",
+      name: "Time engine",
+      ready: l7Ready,
+      detail: l7Ready ? "calendar temp changes with date" : "temperature did not move",
       lastAt: null,
     },
   ];
@@ -161,6 +195,6 @@ export function getStackStatus(): {
     mode: "layers",
     layers,
     honestyNote:
-      "Waiting fees use verified tariffs. Dwell uses Port Sense estimate (published + congestion buffer). Not live AIS.",
+      "Waiting fees use verified tariffs. Calendar dwell is 2023 events / LDB months. Temperature is Open-Meteo history. Road A→B is a secondary ₹/km estimate (table km or haversine × 1.32). Not live AIS.",
   };
 }

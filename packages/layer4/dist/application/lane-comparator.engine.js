@@ -15,6 +15,7 @@ export class LaneComparatorEngine {
     }
     scoreLane(lane, req) {
         const originName = this.data.getPort(lane.originPortId).name;
+        const override = req.dwellHoursByPort?.[lane.originPortId] ?? req.dwellHoursOverride;
         const input = {
             portId: lane.originPortId,
             carrierId: req.carrierId,
@@ -25,9 +26,8 @@ export class LaneComparatorEngine {
             ...(req.containerCount !== undefined
                 ? { containerCount: req.containerCount }
                 : {}),
-            ...(req.dwellHoursOverride !== undefined
-                ? { dwellHoursOverride: req.dwellHoursOverride }
-                : {}),
+            ...(override !== undefined ? { dwellHoursOverride: override } : {}),
+            ...(req.asOf !== undefined ? { asOf: req.asOf } : {}),
         };
         try {
             const priced = this.demurrage.price(input);

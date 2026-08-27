@@ -1,4 +1,4 @@
-import { ExplanationService } from "../src/index.ts";
+import { ExplanationService, AdvisorService } from "../src/index.ts";
 
 const explainer = new ExplanationService();
 let failed = 0;
@@ -48,6 +48,40 @@ const lane = explainer.explainLane({
 });
 
 assert(lane.bullets.some((b) => b.label === "Winner"), "lane winner bullet");
+
+const advisor = new AdvisorService();
+const advice = advisor.advise({
+  inlandLabel: "Surat",
+  asOfDate: "2023-06-08",
+  temperatureC: 30.5,
+  winnerOrigin: "Mundra",
+  saveInrVsRunnerUp: 40000,
+  rows: [
+    {
+      originName: "JNPT",
+      demurrageInr: 90000,
+      truckingInr: 110000,
+      totalInr: 200000,
+      highWait: true,
+      km: 252,
+      riskLevel: "high",
+    },
+    {
+      originName: "Mundra",
+      demurrageInr: 20000,
+      truckingInr: 160000,
+      totalInr: 180000,
+      highWait: false,
+      km: 372,
+      riskLevel: "low",
+    },
+  ],
+  honestyNote: "test",
+});
+assert(advice.engine === "layer5-advisor-v2", "advisor engine");
+assert(advice.spreadsheet.length === 2, "spreadsheet rows");
+assert(advice.summary.includes("Mundra"), "names winner");
+assert(advice.bullets.some((b) => b.text.toLowerCase().includes("waiting")), "wait language");
 
 if (failed > 0) {
   console.error(`Layer5 validate: ${failed} failed`);
